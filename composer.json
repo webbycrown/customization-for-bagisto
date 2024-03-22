@@ -1,5 +1,5 @@
 {
-    "name": "webbycrown/Customisation-for-Bagisto",
+    "name": "webbycrown/customization-for-bagisto",
     "description": "Customization for Bagisto",
     "type": "library",
     "license": "MIT",
@@ -12,7 +12,7 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/webbycrown/Customisation-for-Bagisto"
+            "url": "https://github.com/webbycrown/customization-for-bagisto"
         }
     ],
     "require": {
