@@ -20,13 +20,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Webbycrown\\customization\\": "src/"
+            "Webbycrown\\Customization\\": "src/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Webbycrown\\customization\\Providers\\CustomizedServiceProvider"
+                "Webbycrown\\Customization\\Providers\\CustomizedServiceProvider"
             ],
             "aliases": {}
         }

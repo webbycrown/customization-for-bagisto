@@ -1,6 +1,6 @@
 <?php
 
-namespace Webbycrown\S3Extension\Providers;
+namespace Webbycrown\Customization\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Routing\Router;
