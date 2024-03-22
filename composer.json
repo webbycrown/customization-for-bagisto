@@ -1,0 +1,35 @@
+{
+    "name": "webbycrown/Customisation-for-Bagisto",
+    "description": "Customization for Bagisto",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "WebbyCrown Solutions",
+            "email": "info@webbycrown.com"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/webbycrown/Customisation-for-Bagisto"
+        }
+    ],
+    "require": {
+        "php": "^8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Webbycrown\\customization\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Webbycrown\\customization\\Providers\\CustomizedServiceProvider"
+            ],
+            "aliases": {}
+        }
+    },
+    "minimum-stability": "dev"
+}
