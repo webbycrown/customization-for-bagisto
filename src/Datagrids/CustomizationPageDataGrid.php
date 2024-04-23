@@ -69,7 +69,7 @@ class CustomizationPageDataGrid extends DataGrid
             'type' => 'string',
             'searchable' => true,
             'sortable' => true,
-            'filterable' => true,
+            'filterable' => false,
         ]);
 
         $this->addColumn([
@@ -78,7 +78,7 @@ class CustomizationPageDataGrid extends DataGrid
             'type' => 'string',
             'searchable' => true,
             'sortable' => true,
-            'filterable' => true,
+            'filterable' => false,
         ]);
 
     }
@@ -97,7 +97,8 @@ class CustomizationPageDataGrid extends DataGrid
 
         $this->addAction([
             'index' => 'page_exit',
-            'icon' => 'icon-exit',
+            // 'icon' => 'icon-exit',
+            'icon' => 'icon-settings',
             'title' => 'Section',
             'method' => 'GET',
             'url'    => function ($row) {
@@ -105,25 +106,6 @@ class CustomizationPageDataGrid extends DataGrid
             },
         ]);
 
-    	// $this->addAction([
-    	// 	'title' => 'edit',
-    	// 	'method' => 'GET',
-    	// 	'icon' => 'icon-edit',
-    	// 	'route' => 'admin.blog.edit',
-    	// 	'url'    => function ($row) {
-    	// 		return route('admin.blog.edit', $row->id);
-    	// 	},
-    	// ]);
-
-    	// $this->addAction([
-    	// 	'title' => 'delete',
-    	// 	'method' => 'POST',
-    	// 	'icon' => 'icon-delete',
-    	// 	'route' => 'admin.blog.delete',
-    	// 	'url'    => function ($row) {
-    	// 		return route('admin.blog.delete', $row->id);
-    	// 	},
-    	// ]);
     }
 
     public function prepareMassActions()

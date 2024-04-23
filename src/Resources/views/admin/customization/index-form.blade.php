@@ -1,13 +1,13 @@
 <x-admin::layouts>
     <x-slot:title>
-        {{ __('Customization') }}
+        {{ __('Pages') }}
     </x-slot>
 
-    <v-locales>
+    <v-cust-pages>
 
         <div class="flex  gap-4 justify-between items-center max-sm:flex-wrap">
             <p class="text-xl text-gray-800 dark:text-white font-bold">
-                {{ __('Customization') }}
+                {{ __('Pages') }}
             </p>
             <div class="flex gap-x-2.5 items-center">
                 {{-- <a
@@ -27,31 +27,26 @@
 
         <!-- DataGrid Shimmer -->
         <x-admin::shimmer.datagrid />
-    </v-locales>
+    </v-cust-pages>
 
     @pushOnce('scripts')
         <script
             type="text/x-template"
-            id="v-locales-template"
+            id="v-cust-pages-template"
         >
 
             <div class="flex  gap-4 justify-between items-center max-sm:flex-wrap">
                 <p class="text-xl text-gray-800 dark:text-white font-bold">
-                    {{ __('Customization') }}
+                    {{ __('Pages') }}
                 </p>
 
                 <div class="flex gap-x-2.5 items-center">
-                    {{-- <a
-                        href="{{ route('wc_customization.admin.customization.index') }}" 
-                        class="transparent-button hover:bg-gray-200 dark:hover:bg-gray-800 dark:text-white"
-                        
-                    >Back</a> --}}
 
-                    <!-- Locale Create Button -->
+                    <!-- Page Create Button -->
                     <button
                         type="button"
                         class="primary-button"
-                        @click="selectedLocales=0;resetForm();$refs.localeUpdateOrCreateModal.toggle()"
+                        @click="resetForm();$refs.pagesUpdateOrCreateModal.toggle()"
                     >
                         {{ __('Create Page') }}
                     </button>
@@ -75,7 +70,7 @@
 
                         <!-- Actions -->
                         <div class="flex justify-end">
-                            <a @click="selectedLocales=1; editModal(record.actions.find(action => action.index === 'page_edit')?.url)">
+                            <a @click="editModal(record.actions.find(action => action.index === 'page_edit')?.url)">
                                 <span
                                     :class="record.actions.find(action => action.index === 'page_edit')?.icon"
                                     class="cursor-pointer rounded-md p-1.5 text-2xl transition-all hover:bg-gray-200 dark:hover:bg-gray-800 max-sm:place-self-center"
@@ -101,10 +96,10 @@
             >
                 <form
                     @submit="handleSubmit($event, updateOrCreate)"
-                    ref="createLocaleForm"
+                    ref="createPageForm"
                 >
 
-                    <x-admin::modal ref="localeUpdateOrCreateModal">
+                    <x-admin::modal ref="pagesUpdateOrCreateModal">
                         <!-- Modal Header -->
                         <x-slot:header>
                             <p class="text-lg text-gray-800 dark:text-white font-bold">
@@ -118,7 +113,7 @@
                             <x-admin::form.control-group.control
                                 type="hidden"
                                 name="page_id"
-                                v-model="locale.page_id"
+                                v-model="page_data.id"
                             />
 
                             <x-admin::form.control-group>
@@ -131,10 +126,9 @@
                                     id="title"
                                     name="title"
                                     rules="required"
-                                    v-model="locale.title"
+                                    v-model="page_data.title"
                                     label="Page Title"
                                     placeholder="Page Title"
-                                    {{-- ::disabled="locale.id" --}}
                                 />
 
                                 <x-admin::form.control-group.error control-name="title" />
@@ -150,10 +144,10 @@
                                     id="slug"
                                     name="slug"
                                     rules="required"
-                                    v-model="locale.slug"
+                                    v-model="page_data.slug"
                                     label="Page Slug"
                                     placeholder="Page Slug"
-                                    {{-- ::disabled="locale.id" --}}
+                                    ::disabled="page_data.id"
                                 />
 
                                 <x-admin::form.control-group.error control-name="slug" />
@@ -177,19 +171,18 @@
         </script>
 
         <script type="module">
-            app.component('v-locales', {
-                template: '#v-locales-template',
+            app.component('v-cust-pages', {
+                template: '#v-cust-pages-template',
 
                 data() {
                     return {
-                        locale: {
+                        page_data: {
                             section_form: null,
                             page_slug: null,
                             section_slug: null,
                             image: [],
                         },
 
-                        selectedLocales: 0,
                     }
                 },
 
@@ -211,25 +204,29 @@
 
                 methods: {
                     updateOrCreate(params, { resetForm, setErrors  }) {
-                        let formData = new FormData(this.$refs.createLocaleForm);
+                        let formData = new FormData(this.$refs.createPageForm);
 
-                        // if (params.id) {
-                        //     formData.append('_method', 'put');
-                        // }
-
-                        this.$axios.post(params.id ? "{{ route('wc_customization.page.store') }}" : "{{ route('wc_customization.page.store') }}", formData, {
+                        this.$axios.post("{{ route('wc_customization.page.store') }}", formData, {
                             headers: {
                                 'Content-Type': 'multipart/form-data'
                             }
                         })
                         .then((response) => {
-                            this.$refs.localeUpdateOrCreateModal.close();
+                            if ( response.data.status_code == 500 && response.data.status == 'error' ) {
 
-                            this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
+                                this.$emitter.emit('add-flash', { type: 'error', message: response.data.message });
 
-                            this.$refs.datagrid.get();
+                            } else {
 
-                            resetForm();
+                                this.$refs.pagesUpdateOrCreateModal.close();
+
+                                this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
+
+                                this.$refs.datagrid.get();
+
+                                resetForm();
+
+                            }
                         })
                         .catch(error => {
                             if (error.response.status == 422) {
@@ -241,19 +238,16 @@
                     editModal(url) {
                         this.$axios.get(url)
                             .then((response) => {
-                                this.locale = {
+                                this.page_data = {
                                     ...response.data.data,
-                                        // image: response.data.data.logo_path
-                                        // ? [{ id: 'logo_url', url: response.data.data.logo_url }]
-                                        // : [],
                                 };
 
-                                this.$refs.localeUpdateOrCreateModal.toggle();
+                                this.$refs.pagesUpdateOrCreateModal.toggle();
                             })
                     },
 
                     resetForm() {
-                        this.locale = {
+                        this.page_data = {
                             image: [],
                         };
                     }

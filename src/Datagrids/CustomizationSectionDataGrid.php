@@ -71,7 +71,7 @@ class CustomizationSectionDataGrid extends DataGrid
             'type' => 'string',
             'searchable' => true,
             'sortable' => true,
-            'filterable' => true,
+            'filterable' => false,
         ]);
 
         $this->addColumn([
@@ -80,7 +80,7 @@ class CustomizationSectionDataGrid extends DataGrid
             'type' => 'string',
             'searchable' => true,
             'sortable' => true,
-            'filterable' => true,
+            'filterable' => false,
         ]);
 
     }
@@ -99,7 +99,9 @@ class CustomizationSectionDataGrid extends DataGrid
 
         $this->addAction([
             'index' => 'section_exit',
-            'icon' => 'icon-exit',
+            // 'icon' => 'icon-exit',
+            // 'icon' => 'icon-magic',
+            'icon' => 'icon-edit-save',
             'title' => 'Section',
             'method' => 'GET',
             'url'    => function ($row) {

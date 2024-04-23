@@ -94,36 +94,9 @@ class CustomizationDataGrid extends DataGrid
     		},
     	]);
 
-    	// $this->addAction([
-    	// 	'title' => 'edit',
-    	// 	'method' => 'GET',
-    	// 	'icon' => 'icon-edit',
-    	// 	'route' => 'admin.blog.edit',
-    	// 	'url'    => function ($row) {
-    	// 		return route('admin.blog.edit', $row->id);
-    	// 	},
-    	// ]);
-
-    	// $this->addAction([
-    	// 	'title' => 'delete',
-    	// 	'method' => 'POST',
-    	// 	'icon' => 'icon-delete',
-    	// 	'route' => 'admin.blog.delete',
-    	// 	'url'    => function ($row) {
-    	// 		return route('admin.blog.delete', $row->id);
-    	// 	},
-    	// ]);
     }
 
     public function prepareMassActions()
     {
-    	// $this->addMassAction([
-    	// 	'type'   => 'delete',
-    	// 	'label'  => trans('admin::app.datagrid.delete'),
-    	// 	'title'  => 'Delete',
-    	// 	'action' => route('admin.blog.massdelete'),
-    	// 	'url' => route('admin.blog.massdelete'),
-    	// 	'method' => 'POST',
-    	// ]);
     }
 }

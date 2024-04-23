@@ -3,10 +3,12 @@
 namespace Webbycrown\Customization\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
@@ -14,11 +16,18 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Webbycrown\Customization\Datagrids\CustomizationDataGrid;
 use Webbycrown\Customization\Datagrids\CustomizationPageDataGrid;
 use Webbycrown\Customization\Datagrids\CustomizationSectionDataGrid;
+use Webbycrown\Customization\Datagrids\CustomizationSettingDataGrid;
 use Webbycrown\Customization\Models\CustomizationPages;
 use Webbycrown\Customization\Models\CustomizationSections;
 use Webbycrown\Customization\Models\CustomizationDetails;
+use Webbycrown\Customization\Models\CustomizationSettings;
 use Webbycrown\Customization\Http\Controllers\Shop\CustomizationController as ShopCustomizationController;
 use Intervention\Image\ImageManager;
+use Webkul\Product\Models\ProductFlat;
+use Webkul\Category\Models\Category;
+use Webbycrown\BlogBagisto\Models\Blog;
+use Carbon\Carbon;
+use Webbycrown\Customization\Helpers\CustomizationHelpers;
 
 class CustomizationController extends Controller
 {
@@ -36,7 +45,7 @@ class CustomizationController extends Controller
      *
      * @return void
      */
-    public function __construct()
+    public function __construct(protected CustomizationHelpers $CustomizationHelpers)
     {
         $this->middleware( 'admin' );
 
@@ -50,107 +59,18 @@ class CustomizationController extends Controller
      */
     public function index()
     {
-        $customizations = $this->get_customizations_data();
+        // $customizations = CustomizationHelpers::get_customizations_data();
 
-        $pages = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'pages', $customizations) ) ? $customizations[ 'pages' ] : [];
+        // $pages = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'pages', $customizations) ) ? $customizations[ 'pages' ] : [];
 
         if ( request()->ajax() ) {
 
             return app(CustomizationPageDataGrid::class)->toJson();
 
-            // $columns = array(
-            //     array(
-            //         'databaseColumnName' => 'title',
-            //         'index' => 'title',
-            //         'label' => 'Title',
-            //         'type' => 'string',
-            //         'options' => null,
-            //         'searchable' => true,
-            //         'filterable' => true,
-            //         'sortable' => true,
-            //         'closure' => null,
-            //         'input_type' => null
-            //     ),
-            //     array(
-            //         'databaseColumnName' => 'slug',
-            //         'index' => 'slug',
-            //         'label' => 'Slug',
-            //         'type' => 'string',
-            //         'options' => null,
-            //         'searchable' => true,
-            //         'filterable' => true,
-            //         'sortable' => true,
-            //         'closure' => null,
-            //         'input_type' => null
-            //     )
-            // );
-
-            // $actions = array(
-            //     array(
-            //         'index' => 'page_edit',
-            //         'icon' => 'icon-edit',
-            //         'title' => 'Edit',
-            //         'method' => 'GET',
-            //         'url' => []
-            //     ),
-            //     array(
-            //         'index' => 'page_exit',
-            //         'icon' => 'icon-exit',
-            //         'title' => 'Section',
-            //         'method' => 'GET',
-            //         'url' => []
-            //     )
-            // );
-
-            // $meta = array(
-            //     'primary_column'=> 'title',
-            //     'from'=> 1,
-            //     'to'=> count( $pages) > 10 ? 10 : count( $pages ),
-            //     'total'=> count( $pages ),
-            //     'per_page_options'=> [ 10, 20, 30, 40, 50 ],
-            //     'per_page'=> 10,
-            //     'current_page'=> 1,
-            //     'last_page'=> 1
-            // );
-
-            // if ( $pages && count( $pages ) > 0 ) {
-                
-            //     foreach ( $pages as $section_key => $page ) {
-                    
-            //         foreach ( $actions as $action_key => $action ) {
-
-            //             if ( $action[ 'index' ] == 'page_edit' ) {
-
-            //                 $actions[ $action_key ][ 'url' ] = route( 'wc_customization.admin.customization.index' );
-
-            //             }
-
-            //             if ( $action[ 'index' ] == 'page_exit' ) {
-
-            //                 $actions[ $action_key ][ 'url' ] = route( 'wc_customization.admin.customization.pages.index', $page[ 'slug' ] );
-                            
-            //             }
-                        
-
-            //         }
-
-            //         $pages[ $section_key ][ 'actions' ] = $actions;
-
-            //     }
-
-            // }
-            
-            // return response()->json([
-            //     'columns' => $columns,
-            //     'actions' => $actions,
-            //     'mass_actions' => [],
-            //     'meta' => $meta,
-            //     'records' => $pages
-            // ],200);
-
         }
 
-        return view( $this->_config[ 'view' ], compact( 'customizations' ) );
+        return view( $this->_config[ 'view' ] );
+        // return view( $this->_config[ 'view' ], compact( 'customizations' ) );
 
     }
 
@@ -171,10 +91,34 @@ class CustomizationController extends Controller
      */
     public function section_edit(int $id): JsonResponse
     {
-        $customization_page = CustomizationSections::where( 'id', $id )->firstOrFail();
+        $customization_section = CustomizationSections::where( 'id', $id )->firstOrFail();
 
         return new JsonResponse([
-            'data' => $customization_page,
+            'data' => $customization_section,
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function section_setting_edit(int $id): JsonResponse
+    {
+        $customization_setting = CustomizationSettings::where( 'id', $id )->firstOrFail();
+
+        if ( $customization_setting ) {
+
+            $others = $customization_setting->other_settings;
+
+            if ( isset( $others ) && !is_null( $others ) ) {
+
+                $customization_setting->other_settings = json_decode( $others );
+
+            }
+
+        }
+
+        return new JsonResponse([
+            'data' => $customization_setting,
         ]);
     }
 
@@ -185,96 +129,28 @@ class CustomizationController extends Controller
      */
     public function pages_index( $page_slug )
     {
-        $customizations = $this->get_customization_data_by_slug( $page_slug );
+        // $customizations = CustomizationHelpers::get_customization_data_by_slug( $page_slug );
 
-        $sections = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'sections', $customizations) ) ? $customizations[ 'sections' ] : [];
+        // $sections = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'sections', $customizations) ) ? $customizations[ 'sections' ] : [];
 
         if ( request()->ajax() ) {
 
             return app(CustomizationSectionDataGrid::class)->toJson();
 
-            // $columns = array(
-            //     array(
-            //         'databaseColumnName' => 'title',
-            //         'index' => 'title',
-            //         'label' => 'Title',
-            //         'type' => 'string',
-            //         'options' => null,
-            //         'searchable' => true,
-            //         'filterable' => true,
-            //         'sortable' => true,
-            //         'closure' => null,
-            //         'input_type' => null
-            //     ),
-            //     array(
-            //         'databaseColumnName' => 'slug',
-            //         'index' => 'slug',
-            //         'label' => 'Slug',
-            //         'type' => 'string',
-            //         'options' => null,
-            //         'searchable' => true,
-            //         'filterable' => true,
-            //         'sortable' => true,
-            //         'closure' => null,
-            //         'input_type' => null
-            //     )
-            // );
-
-            // $actions = array(
-            //     array(
-            //         'index' => 'section',
-            //         // 'icon' => 'icon-exit',
-            //         'icon' => 'icon-edit',
-            //         'title' => 'Section',
-            //         'method' => 'GET',
-            //         'url' => []
-            //     )
-            // );
-
-            // $meta = array(
-            //     'primary_column'=> 'title',
-            //     'from'=> 1,
-            //     'to'=> count( $sections) > 10 ? 10 : count( $sections ),
-            //     'total'=> count( $sections ),
-            //     'per_page_options'=> [ 10, 20, 30, 40, 50 ],
-            //     'per_page'=> 10,
-            //     'current_page'=> 1,
-            //     'last_page'=> 1
-            // );
-
-            // if ( $sections && count( $sections ) > 0 ) {
-                
-            //     foreach ( $sections as $section_key => $section ) {
-                    
-            //         foreach ( $actions as $action_key => $action ) {
-                        
-            //             $actions[ $action_key ][ 'url' ] = route( 'wc_customization.admin.customization.sections.index', [ $page_slug, $section[ 'slug' ] ] );
-
-            //         }
-
-            //         $sections[ $section_key ][ 'actions' ] = $actions;
-
-            //     }
-
-            // }
-            
-            // return response()->json([
-            //     'columns' => $columns,
-            //     'actions' => $actions,
-            //     'mass_actions' => [],
-            //     'meta' => $meta,
-            //     'records' => $sections
-            // ],200);
-
         }
 
-        $customization_page = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'page', $customizations ) ) ? $customizations[ 'page' ] : [];
+        // $customization_page = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'page', $customizations ) ) ? $customizations[ 'page' ] : [];
 
-        if ( !$customization_page || empty( $customization_page ) ) {
-            abort( 404 );
-        }
+        // if ( !$customization_page || empty( $customization_page ) ) {
+        //     abort( 404 );
+        // }
 
-        return view( $this->_config[ 'view' ], compact( 'page_slug', 'customization_page', 'sections', 'customizations' ) );
+        // return view( $this->_config[ 'view' ], compact( 'page_slug', 'customization_page', 'sections', 'customizations' ) );
+
+        $customization_page = CustomizationPages::where( 'slug', $page_slug )->firstOrFail();
+
+        return view( $this->_config[ 'view' ], compact( 'page_slug', 'customization_page' ) );
+
     }
 
     /**
@@ -284,17 +160,63 @@ class CustomizationController extends Controller
      */
     public function sections_setting_index( $page_slug, $section_slug )
     {
-        $customizations = $this->get_customization_data_by_slug( $page_slug, $section_slug );
+        if ( request()->ajax() ) {
 
-        $fields = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'fields', $customizations ) ) ? $customizations[ 'fields' ] : [];
+            return app(CustomizationSettingDataGrid::class)->toJson();
 
-        $customization_section = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'section', $customizations ) ) ? $customizations[ 'section' ] : [];
-
-        if ( !$customization_section || empty( $customization_section ) ) {
-            abort( 404 );
         }
 
-        return view( $this->_config[ 'view' ], compact( 'page_slug', 'section_slug', 'customization_section', 'customizations', 'fields' ) );
+        // $customizations = CustomizationHelpers::get_customization_data_by_slug( $page_slug, $section_slug );
+
+        // $fields = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'fields', $customizations ) ) ? $customizations[ 'fields' ] : [];
+
+        // $customization_section = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'section', $customizations ) ) ? $customizations[ 'section' ] : [];
+
+        // if ( !$customization_section || empty( $customization_section ) ) {
+        //     abort( 404 );
+        // }
+
+        // return view( $this->_config[ 'view' ], compact( 'page_slug', 'section_slug', 'customization_section', 'customizations', 'fields' ) );
+
+        $customization_page = CustomizationPages::where( 'slug', $page_slug )->firstOrFail();
+
+        $customization_section = CustomizationSections::where( 'page_slug', $page_slug )->where( 'slug', $section_slug )->firstOrFail();
+
+        return view( $this->_config[ 'view' ], compact( 'page_slug', 'section_slug', 'customization_section', 'customization_page' ) );
+    }
+
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function repeater_sections_setting_index( $page_slug, $section_slug, $id )
+    {
+        if ( request()->ajax() ) {
+
+            return app(CustomizationSettingDataGrid::class)->toJson();
+
+        }
+
+        // $customizations = CustomizationHelpers::get_customization_data_by_slug( $page_slug, $section_slug );
+
+        // $fields = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'fields', $customizations ) ) ? $customizations[ 'fields' ] : [];
+
+        // $customization_section = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'section', $customizations ) ) ? $customizations[ 'section' ] : [];
+
+        // if ( !$customization_section || empty( $customization_section ) ) {
+        //     abort( 404 );
+        // }
+
+        // return view( $this->_config[ 'view' ], compact( 'id', 'page_slug', 'section_slug', 'customization_section', 'customizations', 'fields' ) );
+
+        $customization_setting = CustomizationSettings::where( 'id', $id )->firstOrFail();
+
+        $customization_page = CustomizationPages::where( 'slug', $page_slug )->firstOrFail();
+
+        $customization_section = CustomizationSections::where( 'page_slug', $page_slug )->where( 'slug', $section_slug )->firstOrFail();
+
+        return view( $this->_config[ 'view' ], compact( 'id', 'page_slug', 'section_slug', 'customization_setting', 'customization_page', 'customization_section' ) );
     }
 
     /**
@@ -304,7 +226,7 @@ class CustomizationController extends Controller
      */
     public function sections_index( $page_slug, $section_slug )
     {
-        $customizations = $this->get_customization_data_by_slug( $page_slug, $section_slug );
+        $customizations = CustomizationHelpers::get_customization_data_by_slug( $page_slug, $section_slug );
 
         $fields = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'fields', $customizations ) ) ? $customizations[ 'fields' ] : [];
 
@@ -312,7 +234,7 @@ class CustomizationController extends Controller
 
             $section_form = '';
 
-            $field_details = [];
+            $field_details = $repeaters = [];
 
             $section_details = CustomizationDetails::where( 'page_slug', $page_slug )->where( 'section_slug', $section_slug )->first();
 
@@ -339,8 +261,9 @@ class CustomizationController extends Controller
                                                 name="field_details[' . $field[ 'name' ] . ']" 
                                                 class="w-full py-2.5 px-3 border rounded-md text-sm text-gray-600 dark:text-gray-300 transition-all hover:border-gray-400 dark:hover:border-gray-400 focus:border-gray-400 dark:focus:border-gray-400 dark:bg-gray-900 dark:border-gray-800" 
                                                 id="' . $field[ 'name' ] . '" 
-                                                placeholder="' . $field[ 'name' ] . '"
+                                                placeholder="' . $field[ 'title' ] . '"
                                                 value="' . $section_field_val . '"
+                                                ' . $required_field . '
                                             >
                                         </div>';
 
@@ -368,6 +291,7 @@ class CustomizationController extends Controller
                                                 name="field_details[' . $field[ 'name' ] . ']" 
                                                 class="custom-select w-full py-2.5 px-3 bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-md text-sm text-gray-600 dark:text-gray-300 font-normal transition-all hover:border-gray-400 dark:hover:border-gray-400" 
                                                 id="' . $field[ 'name' ] . '"
+                                                ' . $required_field . '
                                             >
                                                 <option value=""> Select ' . $field[ 'title' ] . ' </option>
                                                 ' . $section_option . '
@@ -386,6 +310,7 @@ class CustomizationController extends Controller
                                                 class="w-full py-2.5 px-3 border rounded-md text-sm text-gray-600 dark:text-gray-300 transition-all hover:border-gray-400 dark:hover:border-gray-400 focus:border-gray-400 dark:focus:border-gray-400 dark:bg-gray-900 dark:border-gray-800" 
                                                 id="' . $field[ 'name' ] . '" 
                                                 placeholder="' . $field[ 'title' ] . '"
+                                                ' . $required_field . '
                                             >' . $section_field_val . '</textarea>
                                         </div>';
 
@@ -410,11 +335,11 @@ class CustomizationController extends Controller
                                 foreach ( $section_field_val as $file ) {
 
                                     $file_content .= '<a 
-                                                    href="' . env( 'APP_URL' ) . '/storage/' . $file . '" 
+                                                    href="' . CustomizationHelpers::pre_file_url() . $file . '" 
                                                     target="_blank"
                                                 >
                                                     <img 
-                                                        src="' . env( 'APP_URL' ) . '/storage/' . $file . '" 
+                                                        src="' . CustomizationHelpers::pre_file_url() . $file . '" 
                                                         class="relative mr-5 h-[33px] w-[33px] top-15 rounded-3 border-3 border-gray-500"
                                                     >
                                                 </a>';
@@ -430,11 +355,11 @@ class CustomizationController extends Controller
                             if ( isset( $section_field_val ) && !empty( $section_field_val ) && !is_null( $section_field_val ) ) {
 
                                 $file_content .= '<a 
-                                                    href="' . env( 'APP_URL' ) . '/storage/' . $section_field_val . '" 
+                                                    href="' . CustomizationHelpers::pre_file_url() . $section_field_val . '" 
                                                     target="_blank"
                                                 >
                                                     <img 
-                                                        src="' . env( 'APP_URL' ) . '/storage/' . $section_field_val . '" 
+                                                        src="' . CustomizationHelpers::pre_file_url() . $section_field_val . '" 
                                                         class="relative mr-5 h-[33px] w-[33px] top-15 rounded-3 border-3 border-gray-500"
                                                     >
                                                 </a>';
@@ -445,7 +370,10 @@ class CustomizationController extends Controller
                         
                         $section_form .= '<div class="mb-4">
                                             <div class="flex justify-between">
-                                                <label class="flex gap-1 items-center mb-1.5 text-xs text-gray-800 dark:text-white font-medium" 
+                                                <label class="flex gap-1 items-center mb-1.5 text-xs text-gray-800 dark:text-white font-medium 
+                                                ' . ( ( isset( $section_field_val ) && !empty( $section_field_val ) && !is_null( $section_field_val ) ) 
+                                                    ? "" 
+                                                    : $required_field ) . '" 
                                                     for="field_details[' . $field[ 'name' ] . ']"
                                                     > ' . $field[ 'title' ] . '
                                                     <span class=""></span>
@@ -457,6 +385,9 @@ class CustomizationController extends Controller
                                                     name="' . $file_input_name . '" 
                                                     class="w-full py-2.5 px-3 border rounded-md text-sm text-gray-600 dark:text-gray-300 transition-all hover:border-gray-400 dark:hover:border-gray-400 dark:file:bg-gray-800 dark:file:dark:text-white dark:hover:border-gray-400 focus:border-gray-400 dark:focus:border-gray-400 dark:bg-gray-900 dark:border-gray-800" 
                                                     id="' . $field[ 'name' ] . '"
+                                                    ' . ( ( isset( $section_field_val ) && !empty( $section_field_val ) && !is_null( $section_field_val ) ) 
+                                                        ? "" 
+                                                        : $required_field ) . '
                                                     ' . $multiple_file_option . '
                                                 >
                                             </div>
@@ -465,17 +396,203 @@ class CustomizationController extends Controller
 
                     }
 
+                    if ( $field[ 'type' ] == 'product' ) {
+
+                        $section_option = '';
+
+                        $multiple_flag = ( array_key_exists( 'multiple', $field ) && $field[ 'multiple' ] == true ) ? true : false;
+
+                        $multiple_file_option = ( $multiple_flag == true ) ? 'multiple' : '';
+
+                        $file_input_name = ( $multiple_flag == true ) ? 'field_details[' . $field[ 'name' ] . '][]' : $field[ 'name' ];
+
+                        $products = ProductFlat::whereNull( 'parent_id' )->where( 'status', 1 )->get();
+
+                        if ( $products && count( $products ) > 0 ) {
+                            
+                            foreach ( $products as $product ) {
+
+                                $selected_val = ( is_array( $section_field_val ) && in_array( $product->id, $section_field_val ) ) ? 'selected' : '';
+                                
+                                $section_option .= '<option value="'.$product->id.'" '.$selected_val.'>[ '.$product->sku.' ] '.$product->name.'</option>';
+
+                            }
+
+                        }
+                        
+                        $section_form .= '<div class="mb-4">
+                                            <label class="flex gap-1 items-center mb-1.5 text-xs text-gray-800 dark:text-white font-medium ' . $required_field . '">' . $field[ 'title' ] . '</label>
+                                            <select 
+                                                name="' . $file_input_name . '" 
+                                                class="custom-select w-full py-2.5 px-3 bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-md text-sm text-gray-600 dark:text-gray-300 font-normal transition-all hover:border-gray-400 dark:hover:border-gray-400" 
+                                                id="' . $field[ 'name' ] . '"
+                                                ' . $required_field . '
+                                                ' . $multiple_file_option . '
+                                            >
+                                                ' . $section_option . '
+                                            </select>
+                                        </div>';
+
+                    }
+
+                    if ( $field[ 'type' ] == 'category' ) {
+
+                        $section_option = '';
+
+                        $multiple_flag = ( array_key_exists( 'multiple', $field ) && $field[ 'multiple' ] == true ) ? true : false;
+
+                        $multiple_file_option = ( $multiple_flag == true ) ? 'multiple' : '';
+
+                        $file_input_name = ( $multiple_flag == true ) ? 'field_details[' . $field[ 'name' ] . '][]' : $field[ 'name' ];
+
+                        $categorys = Category::leftjoin('category_translations as cat_trl', 'cat_trl.category_id', '=', 'categories.id')
+                        ->select( 'categories.id', 'cat_trl.name' )
+                        ->where( 'categories.status', 1 )
+                        ->where( 'cat_trl.locale', 'en' )
+                        ->get();
+
+                        if ( $categorys && count( $categorys ) > 0 ) {
+                            
+                            foreach ( $categorys as $category ) {
+
+                                $selected_val = ( is_array( $section_field_val ) && in_array( $category->id, $section_field_val ) ) ? 'selected' : '';
+                                
+                                $section_option .= '<option value="'.$category->id.'" '.$selected_val.'>'.$category->name.'</option>';
+
+                            }
+
+                        }
+                        
+                        $section_form .= '<div class="mb-4">
+                                            <label class="flex gap-1 items-center mb-1.5 text-xs text-gray-800 dark:text-white font-medium ' . $required_field . '">' . $field[ 'title' ] . '</label>
+                                            <select 
+                                                name="' . $file_input_name . '" 
+                                                class="custom-select w-full py-2.5 px-3 bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-md text-sm text-gray-600 dark:text-gray-300 font-normal transition-all hover:border-gray-400 dark:hover:border-gray-400" 
+                                                id="' . $field[ 'name' ] . '"
+                                                ' . $required_field . '
+                                                ' . $multiple_file_option . '
+                                            >
+                                                ' . $section_option . '
+                                            </select>
+                                        </div>';
+
+                    }
+
+                    if ( $field[ 'type' ] == 'category_product' ) {
+
+                        $section_option = '';
+
+                        $multiple_flag = ( array_key_exists( 'multiple', $field ) && $field[ 'multiple' ] == true ) ? true : false;
+
+                        $multiple_file_option = ( $multiple_flag == true ) ? 'multiple' : '';
+
+                        $file_input_name = ( $multiple_flag == true ) ? 'field_details[' . $field[ 'name' ] . '][]' : $field[ 'name' ];
+
+                        $categorys = Category::leftjoin('category_translations as cat_trl', 'cat_trl.category_id', '=', 'categories.id')
+                        ->select( 'categories.id', 'cat_trl.name' )
+                        ->where( 'categories.status', 1 )
+                        ->where( 'cat_trl.locale', 'en' )
+                        ->get();
+
+                        if ( $categorys && count( $categorys ) > 0 ) {
+                            
+                            foreach ( $categorys as $category ) {
+
+                                $selected_val = ( is_array( $section_field_val ) && in_array( $category->id, $section_field_val ) ) ? 'selected' : '';
+                                
+                                $section_option .= '<option value="'.$category->id.'" '.$selected_val.'>'.$category->name.'</option>';
+
+                            }
+
+                        }
+                        
+                        $section_form .= '<div class="mb-4">
+                                            <label class="flex gap-1 items-center mb-1.5 text-xs text-gray-800 dark:text-white font-medium ' . $required_field . '">' . $field[ 'title' ] . '</label>
+                                            <select 
+                                                name="' . $file_input_name . '" 
+                                                class="custom-select w-full py-2.5 px-3 bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-md text-sm text-gray-600 dark:text-gray-300 font-normal transition-all hover:border-gray-400 dark:hover:border-gray-400" 
+                                                id="' . $field[ 'name' ] . '"
+                                                ' . $required_field . '
+                                                ' . $multiple_file_option . '
+                                            >
+                                                ' . $section_option . '
+                                            </select>
+                                        </div>';
+
+                    }
+
+                    if ( $field[ 'type' ] == 'blog' ) {
+
+                        $section_option = $blogs = '';
+
+                        $multiple_flag = ( array_key_exists( 'multiple', $field ) && $field[ 'multiple' ] == true ) ? true : false;
+
+                        $multiple_file_option = ( $multiple_flag == true ) ? 'multiple' : '';
+
+                        $file_input_name = ( $multiple_flag == true ) ? 'field_details[' . $field[ 'name' ] . '][]' : $field[ 'name' ];
+
+                        $if_blog_table = CustomizationHelpers::check_table_exist_in_database( 'Webbycrown\BlogBagisto\Models\Blog' );
+
+                        if ( $if_blog_table ) {
+
+                            $blogs = Blog::where('published_at', '<=', Carbon::now()->format('Y-m-d'))
+                            ->where( 'status', 1 )
+                            ->where( 'locale', 'en' )
+                            ->get();
+
+                        }
+
+                        if ( $blogs && count( $blogs ) > 0 ) {
+                            
+                            foreach ( $blogs as $blog ) {
+
+                                $selected_val = ( is_array( $section_field_val ) && in_array( $blog->id, $section_field_val ) ) ? 'selected' : '';
+                                
+                                $section_option .= '<option value="'.$blog->id.'" '.$selected_val.'>'.$blog->name.'</option>';
+
+                            }
+
+                        }
+                        
+                        $section_form .= '<div class="mb-4">
+                                            <label class="flex gap-1 items-center mb-1.5 text-xs text-gray-800 dark:text-white font-medium ' . $required_field . '">' . $field[ 'title' ] . '</label>
+                                            <select 
+                                                name="' . $file_input_name . '" 
+                                                class="custom-select w-full py-2.5 px-3 bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-md text-sm text-gray-600 dark:text-gray-300 font-normal transition-all hover:border-gray-400 dark:hover:border-gray-400" 
+                                                id="' . $field[ 'name' ] . '"
+                                                ' . $required_field . '
+                                                ' . $multiple_file_option . '
+                                            >
+                                                ' . $section_option . '
+                                            </select>
+                                        </div>';
+
+                    }
+
+                    if ( $field[ 'type' ] == 'repeater' ) {
+
+                        $repeaters[] = $field;
+
+                    }
+
                 }
+
+            } else {
+
+                $section_form = '<div class="text-red-500 font-semibold">There is no setting here.</div>';
 
             }
 
             return response()->json([
                 'data' => array(
                     'fields' => $fields,
+                    'field_details' => $field_details,
+                    'pre_file_url' => CustomizationHelpers::pre_file_url(),
                     'section_form' => $section_form,
                     'page_slug' => $page_slug,
                     'section_slug' => $section_slug,
-                    'section_details' => $section_details
+                    'section_details' => $section_details,
+                    'repeaters' => $repeaters
                 )
             ],200);
 
@@ -490,319 +607,6 @@ class CustomizationController extends Controller
         return view( $this->_config[ 'view' ], compact( 'page_slug', 'section_slug', 'customization_section', 'customizations', 'fields' ) );
     }
 
-    public function get_customizations_data()
-    {
-        $customizations = array(
-            'pages' => array( 
-                array(
-                    'title' => 'Page 1', 
-                    'slug' => 'page-1',
-                    'sections' => array(
-                        array( 
-                            'title' => 'Section 1-1', 
-                            'slug' => 'section-1-1',
-                            'fields' => array(
-                                array(
-                                    'name' => 'text_box',
-                                    'type' => 'text',
-                                    'title' => 'Text Box',
-                                    'required' => true
-                                ),
-                                array(
-                                    'type' => 'select',
-                                    'title' => 'Select Box',
-                                    'name' => 'select_box',
-                                    'required' => false,
-                                    'options' => array(
-                                        'option-1' => 'Option 1',
-                                        'option-2' => 'Option 2',
-                                        'option-3' => 'Option 3',
-                                    )
-                                ),
-                                array(
-                                    'name' => 'text_area',
-                                    'type' => 'textarea',
-                                    'title' => 'Text Area',
-                                    'required' => true
-                                ),
-                                array(
-                                    'name' => 'file_upload',
-                                    'type' => 'file',
-                                    'title' => 'File Upload',
-                                    'required' => false,
-                                    'multiple' => false
-                                ),
-                                array(
-                                    'name' => 'multiple_file_upload',
-                                    'type' => 'file',
-                                    'title' => 'Multiple File Upload',
-                                    'required' => false,
-                                    'multiple' => true
-                                )
-                            )
-                        ),
-                        array( 
-                            'title' => 'Section 1-2', 
-                            'slug' => 'section-1-2',
-                            'fields' => array(
-                                array(
-                                    'name' => 'text_box',
-                                    'type' => 'text',
-                                    'title' => 'Text Box',
-                                    'required' => true
-                                ),
-                                
-                            )
-                        ),
-                        array( 
-                            'title' => 'Section 1-3', 
-                            'slug' => 'section-1-3',
-                            'fields' => array(
-                                array(
-                                    'name' => 'text_box',
-                                    'type' => 'text',
-                                    'title' => 'Text Box',
-                                    'required' => true
-                                ),
-                                
-                                array(
-                                    'name' => 'text_area',
-                                    'type' => 'textarea',
-                                    'title' => 'Text Area',
-                                    'required' => true
-                                )
-                            )
-                        ),
-                    )
-                ),
-                array(
-                    'title' => 'Page 2', 
-                    'slug' => 'page-2',
-                    'sections' => array(
-                        array( 
-                            'title' => 'Section 2-1', 
-                            'slug' => 'section-2-1',
-                            'fields' => array(
-                                
-                                array(
-                                    'type' => 'select',
-                                    'title' => 'Select Box',
-                                    'name' => 'select_box',
-                                    'required' => false,
-                                    'options' => array(
-                                        'option-1' => 'Option 1',
-                                        'option-2' => 'Option 2',
-                                        'option-3' => 'Option 3',
-                                    )
-                                ),
-                                array(
-                                    'name' => 'text_area',
-                                    'type' => 'textarea',
-                                    'title' => 'Text Area',
-                                    'required' => true
-                                )
-                            )
-                        ),
-                        array( 
-                            'title' => 'Section 2-2', 
-                            'slug' => 'section-2-2',
-                            'fields' => array(
-                                
-                                array(
-                                    'name' => 'text_area',
-                                    'type' => 'textarea',
-                                    'title' => 'Text Area',
-                                    'required' => true
-                                )
-                            )
-                        ),
-                        array( 
-                            'title' => 'Section 2-3', 
-                            'slug' => 'section-2-3',
-                            'fields' => array(
-                                array(
-                                    'name' => 'text_box',
-                                    'type' => 'text',
-                                    'title' => 'Text Box',
-                                    'required' => true
-                                ),
-                                
-                                array(
-                                    'name' => 'text_area',
-                                    'type' => 'textarea',
-                                    'title' => 'Text Area',
-                                    'required' => true
-                                )
-                            )
-                        ),
-                    )
-                ),
-                array(
-                    'title' => 'Page 3', 
-                    'slug' => 'page-3',
-                    'sections' => array(
-                        array( 
-                            'title' => 'Section 3-1', 
-                            'slug' => 'section-3-1',
-                            'fields' => array(
-                                
-                                array(
-                                    'type' => 'select',
-                                    'title' => 'Select Box',
-                                    'name' => 'select_box',
-                                    'required' => false,
-                                    'options' => array(
-                                        'option-1' => 'Option 1',
-                                        'option-2' => 'Option 2',
-                                        'option-3' => 'Option 3',
-                                    )
-                                ),
-                            )
-                        ),
-                        array( 
-                            'title' => 'Section 3-2', 
-                            'slug' => 'section-3-2',
-                            'fields' => array(
-                                
-                                array(
-                                    'name' => 'text_area',
-                                    'type' => 'textarea',
-                                    'title' => 'Text Area',
-                                    'required' => true
-                                )
-                            )
-                        ),
-                        array( 
-                            'title' => 'Section 3-3', 
-                            'slug' => 'section-3-3',
-                            'fields' => array(
-                                array(
-                                    'name' => 'text_box',
-                                    'type' => 'text',
-                                    'title' => 'Text Box',
-                                    'required' => true
-                                ),
-                                
-                                array(
-                                    'name' => 'text_area',
-                                    'type' => 'textarea',
-                                    'title' => 'Text Area',
-                                    'required' => true
-                                )
-                            )
-                        ),
-                    )
-                ),
-            )
-        );
-        return $customizations;
-    }
-
-    public function get_data_by_slug( $slug = null, $data = [] )
-    {
-        $search_data = [];
-
-        if ( isset( $slug ) && !empty( $slug ) && !is_null( $slug ) && !empty( $data ) && count( $data ) > 0 ) {
-
-            foreach ($data as $d) {
-
-                if ( array_key_exists( 'slug', $d ) && $d[ 'slug' ] == $slug ) {
-
-                    $search_data = $d;
-
-                }
-
-            }
-
-        }
-
-        return $search_data;
-    }
-
-    public function get_customization_data_by_slug( $page_slug = null, $section_slug = null )
-    {
-        $customization_data = $pages = $sections = $fields = $page = $section = [];
-
-        $customizations = $this->get_customizations_data();
-
-        if ( array_key_exists( 'pages', $customizations ) && !empty( $customizations ) && count( $customizations ) > 0 && isset( $page_slug ) && !empty( $page_slug ) && !is_null( $page_slug ) ) {
-
-            $pages = $this->get_data_by_slug( $page_slug, $customizations[ 'pages' ] );
-        }
-
-        if ( array_key_exists( 'sections', $pages ) && !empty( $pages ) && count( $pages ) > 0 && isset( $section_slug ) && !empty( $section_slug ) && !is_null( $section_slug ) ) {
-
-            $sections = $this->get_data_by_slug( $section_slug, $pages[ 'sections' ] );
-        }
-
-        if ( !empty( $pages ) && count( $pages ) > 0 ) {
-            
-            $page = $pages;
-            
-            if ( array_key_exists( 'sections', $page) ) {
-
-                unset( $page[ 'sections' ] );
-
-            }
-
-        }
-
-        if ( !empty( $sections ) && count( $sections ) > 0 ) {
-
-            $section = $sections;
-
-            if ( array_key_exists( 'fields', $section) ) {
-
-                unset( $section[ 'fields' ] );
-
-            }
-
-        } else {
-
-            $sections = ( !empty( $pages ) && count( $pages ) > 0 && array_key_exists( 'sections', $pages ) ) ? $pages[ 'sections' ] : [];
-
-        }
-
-        $fields = ( !empty( $sections ) && count( $sections ) > 0 && array_key_exists( 'fields', $sections ) ) ? $sections[ 'fields' ] : [];
-
-        $customization_data = array(
-            'page' => $page,
-            'pages' => $pages,
-            'section' => $section,
-            'sections' => $sections,
-            'fields' => $fields,
-        );
-
-        return $customization_data;
-    }
-
-    public function get_all_pages_data()
-    {
-        $pages = array(
-            array( 'id' => 1, 'title' => 'Page 1', 'slug' => 'page-1' ),
-            array( 'id' => 2, 'title' => 'Page 2', 'slug' => 'page-2' ),
-            array( 'id' => 3, 'title' => 'Page 3', 'slug' => 'page-3' )
-        );
-
-        return $pages;
-    }
-
-    public function get_all_section_data()
-    {
-        $sections = array(
-            array( 'id' => 1, 'title' => 'Section 1', 'slug' => 'section-1' ),
-            array( 'id' => 2, 'title' => 'Section 2', 'slug' => 'section-2' ),
-            array( 'id' => 3, 'title' => 'Section 3', 'slug' => 'section-3' )
-        );
-
-        return $sections;
-    }
-
-    public function get_customization_directory(): string
-    {
-        return 'customizations';
-    }
-
     /**
      * Store a newly created resource in storage.
      *
@@ -810,27 +614,59 @@ class CustomizationController extends Controller
      */
     public function page_store(): JsonResponse
     {
-        $this->validate(request(), [
-            'title'     => 'required',
-            'slug'  => 'required',
-        ]);
-
         $data = request()->all();
+
+        $page_id = array_key_exists( 'page_id', $data ) ? $data[ 'page_id' ] : 0;
 
         $page_title = array_key_exists( 'title', $data ) ? $data[ 'title' ] : null;
 
         $page_slug = array_key_exists( 'slug', $data ) ? $data[ 'slug' ] : null;
 
-        $store_data = array(
-            'title' => $page_title,
-            'slug' => $page_slug,
-        );
+        $require_arr = array( 'title' => 'required' );
 
-        $if_exist = CustomizationPages::where( 'slug', $page_slug )->first();
+        $store_data = array( 'title' => $page_title );
+
+        if ( (int)$page_id <= 0 ) {
+
+            $require_arr[ 'slug' ] = 'required';
+
+            $store_data[ 'slug' ] = $page_slug;
+
+            $if_exist = CustomizationPages::where( 'slug', $page_slug )->first();
+
+            if ( $if_exist ) {
+
+                return new JsonResponse([
+                    'status_code' => 500,
+                    'status' => 'error',
+                    'message' => 'Page slug already used',
+                ]);
+
+            }
+
+        } else {
+
+            $if_exist = CustomizationPages::where( 'slug', $page_slug )->where( 'id', '!=', $page_id )->first();
+
+            if ( $if_exist ) {
+
+                return new JsonResponse([
+                    'status_code' => 500,
+                    'status' => 'error',
+                    'message' => 'Page slug already used',
+                ]);
+
+            }
+
+            $if_exist = CustomizationPages::where( 'id', $page_id )->first();
+
+        }
+
+        $this->validate( request(), $require_arr );
 
         if ( $if_exist ) {
 
-            CustomizationPages::where( 'slug', $page_slug )->update( $store_data );
+            $if_exist->update( $store_data );
 
         } else {
 
@@ -838,6 +674,8 @@ class CustomizationController extends Controller
         }
 
         return new JsonResponse([
+            'status_code' => 200,
+            'status' => 'success',
             'message' => 'Save Customization Page Successfully',
         ]);
 
@@ -850,13 +688,9 @@ class CustomizationController extends Controller
      */
     public function section_store(): JsonResponse
     {
-        $this->validate(request(), [
-            'page_slug'     => 'required',
-            'title'     => 'required',
-            'slug'  => 'required',
-        ]);
-
         $data = request()->all();
+
+        $section_id = array_key_exists( 'section_id', $data ) ? $data[ 'section_id' ] : 0;
 
         $page_slug = array_key_exists( 'page_slug', $data ) ? $data[ 'page_slug' ] : null;
 
@@ -864,17 +698,55 @@ class CustomizationController extends Controller
 
         $section_slug = array_key_exists( 'slug', $data ) ? $data[ 'slug' ] : null;
 
-        $store_data = array(
-            'page_slug' => $page_slug,
-            'title' => $section_title,
-            'slug' => $section_slug,
-        );
+        $require_arr = array( 'title' => 'required' );
 
-        $if_exist = CustomizationSections::where( 'page_slug', $page_slug )->where( 'slug', $section_slug )->first();
+        $store_data = array( 'title' => $section_title );
+
+        if ( (int)$section_id <= 0 ) {
+
+            $require_arr[ 'slug' ] = 'required';
+
+            $require_arr[ 'page_slug' ] = 'required';
+
+            $store_data[ 'slug' ] = $section_slug;
+
+            $store_data[ 'page_slug' ] = $page_slug;
+
+            $if_exist = CustomizationSections::where( 'page_slug', $page_slug )->where( 'slug', $section_slug )->first();
+
+            if ( $if_exist ) {
+
+                return new JsonResponse([
+                    'status_code' => 500,
+                    'status' => 'error',
+                    'message' => 'Section slug already used',
+                ]);
+
+            }
+
+        } else {
+
+            $if_exist = CustomizationSections::where( 'page_slug', $page_slug )->where( 'slug', $section_slug )->where( 'id', '!=', $section_id )->first();
+
+            if ( $if_exist ) {
+
+                return new JsonResponse([
+                    'status_code' => 500,
+                    'status' => 'error',
+                    'message' => 'Section slug already used',
+                ]);
+
+            }
+
+            $if_exist = CustomizationSections::where( 'id', $section_id )->first();
+
+        }
+
+        $this->validate( request(), $require_arr );
 
         if ( $if_exist ) {
 
-            CustomizationSections::where( 'page_slug', $page_slug )->where( 'slug', $section_slug )->update( $store_data );
+            $if_exist->update( $store_data );
 
         } else {
 
@@ -882,7 +754,151 @@ class CustomizationController extends Controller
         }
 
         return new JsonResponse([
+            'status_code' => 200,
+            'status' => 'success',
             'message' => 'Save Customization Section Successfully',
+        ]);
+
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function section_setting_validate(): JsonResponse
+    {
+        $data = request()->all();
+
+        $page_slug = array_key_exists( 'page_slug', $data ) ? trim( $data[ 'page_slug' ] ) : null;
+
+        $section_slug = array_key_exists( 'section_slug', $data ) ? trim( $data[ 'section_slug' ] ) : null;
+
+        $field_code = array_key_exists( 'field_code', $data ) ? trim( $data[ 'field_code' ] ) : null;
+
+        $section_setting_id = array_key_exists( 'section_setting_id', $data ) ? (int)$data[ 'section_setting_id' ] : 0;
+
+        if ( (int)$section_setting_id > 0 ) {
+
+            $if_exist = CustomizationSettings::where( 'page_slug', $page_slug )
+            ->where( 'section_slug', $section_slug )
+            ->where( 'name', $field_code )
+            ->where( 'id', '!=', $section_setting_id )
+            ->first();
+
+        } else {
+
+            $if_exist = CustomizationSettings::where( 'page_slug', $page_slug )->where( 'section_slug', $section_slug )->where( 'name', $field_code )->first();
+
+        }
+
+        if ( $if_exist ) {
+
+            return new JsonResponse([
+                'status_code' => 200,
+                'status' => 'success',
+                'message' => 'key already exist for this section',
+            ]);
+
+        }
+
+        return new JsonResponse([
+            'status_code' => 200,
+            'status' => 'error',
+            'message' => 'key already not exist for this section',
+        ]);
+
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function section_setting_store(): JsonResponse
+    {
+        $data = request()->all();
+
+        $section_setting_id = array_key_exists( 'section_setting_id', $data ) ? $data[ 'section_setting_id' ] : 0;
+
+        $page_slug = array_key_exists( 'page_slug', $data ) ? $data[ 'page_slug' ] : null;
+
+        $section_slug = array_key_exists( 'section_slug', $data ) ? $data[ 'section_slug' ] : null;
+
+        $field_title = array_key_exists( 'field_title', $data ) ? $data[ 'field_title' ] : null;
+
+        $field_name = array_key_exists( 'field_name', $data ) ? $data[ 'field_name' ] : null;
+
+        $field_type = array_key_exists( 'field_type', $data ) ? $data[ 'field_type' ] : null;
+
+        $field_required = array_key_exists( 'field_required', $data ) ? $data[ 'field_required' ] : 0;
+
+        $field_multiple = array_key_exists( 'field_multiple', $data ) ? $data[ 'field_multiple' ] : 0;
+
+        $field_status = array_key_exists( 'field_status', $data ) ? $data[ 'field_status' ] : 0;
+
+        $field_option = array_key_exists( 'field_option', $data ) ? $data[ 'field_option' ] : null;
+
+        $setting_parent_id = array_key_exists( 'setting_parent_id', $data ) ? (int)$data[ 'setting_parent_id' ] : 0;
+
+        $setting_type = array_key_exists( 'setting_type', $data ) ? $data[ 'setting_type' ] : null;
+
+        $field_required = ( (int)$field_required > 0 ) ? 1 : 0;
+
+        $field_multiple = ( (int)$field_multiple > 0 ) ? 1 : 0;
+        
+        $field_status = ( (int)$field_status > 0 ) ? 1 : 0;
+
+        $options = array();
+
+        if ( $field_type == 'select' ) {
+
+            $options = array( 'options' => $field_option );
+
+        }
+
+        $other_settings = json_encode( $options );
+
+        $store_data = array(
+            'page_slug' => $page_slug,
+            'section_slug' => $section_slug,
+            'title' => $field_title,
+            'name' => $field_name,
+            'type' => $field_type,
+            'required' => $field_required,
+            'multiple' => $field_multiple,
+            'status' => $field_status,
+            'parent_id' => $setting_parent_id,
+            'setting_type' => $setting_type,
+            'other_settings' => $other_settings,
+        );
+
+        if ( (int)$section_setting_id > 0 ) {
+
+            $if_exist = CustomizationSettings::where( 'id', $section_setting_id )->first();
+
+        } else {
+
+            $if_exist = CustomizationSettings::where( 'page_slug', $page_slug )->where( 'section_slug', $section_slug )->where( 'name', $field_name )->first();
+
+        }
+
+        if ( $if_exist ) {
+
+            unset( $store_data[ 'page_slug' ] );
+
+            unset( $store_data[ 'section_slug' ] );
+
+            $if_exist->update( $store_data );
+
+        } else {
+
+            CustomizationSettings::create( $store_data );
+
+        }
+
+        return new JsonResponse([
+            'message' => 'Save Customization Setting Successfully',
         ]);
 
     }
@@ -908,65 +924,145 @@ class CustomizationController extends Controller
 
         $field_details = array_key_exists( 'field_details', $data ) ? $data[ 'field_details' ] : array();
 
-        $file_field_keys = array( 'file_upload', 'multiple_file_upload' );
+        $repeater_data = array_key_exists( 'repeater_data', $data ) ? $data[ 'repeater_data' ] : array();
 
+        if ( $repeater_data && is_array( $repeater_data ) && count( $repeater_data ) > 0 ) {
+
+            $field_details = array_merge( $field_details, $repeater_data );
+
+        }
+
+        $file_field_keys = CustomizationHelpers::get_file_field_keys();
+
+        $file_field_keys_with_rp = CustomizationHelpers::get_file_field_keys( 'repeater' );
+
+        $repeater_field_keys = CustomizationHelpers::get_repeater_field_keys();
+
+        $file_flags_arr = array();
+        
+        $allFiles = request()->allFiles();
+        
+        if ( $allFiles && is_array( $allFiles ) && count( $allFiles ) > 0 ) {
+            foreach ( $allFiles as $file_key => $file_val ) {
+
+                // add repeaters file
+                if ( $file_key == 'repeater_data' ) {
+
+                    foreach ( $file_val as $repeater_field_name => $repeater_files ) {
+
+                        if ( is_array( $repeater_field_keys ) && in_array( $repeater_field_name, $repeater_field_keys ) && is_array( $repeater_files ) && count( $repeater_files ) > 0 ) {
+
+                            foreach ( $repeater_files as $repeater_field_index => $repeater_file ) {
+
+                                if ( $file_field_keys_with_rp && count( $file_field_keys_with_rp ) > 0 ) {
+
+                                    foreach ( $file_field_keys_with_rp as $file_field_key ) {
+
+                                        if ( is_array( $repeater_file ) && array_key_exists( $file_field_key, $repeater_file ) ) {
+
+                                            $rp_file = $repeater_file[$file_field_key];
+
+                                            $field_details = CustomizationHelpers::operation_for_upload_media_in_customization_store( $file_field_key, $rp_file, $field_details, $page_slug, $section_slug, 'repeater', $repeater_field_name, $repeater_field_index  );
+
+                                            $file_flags_arr[ $repeater_field_name.'###'.$repeater_field_index.'###'.$file_field_key ] = true;
+
+                                        }
+
+                                    }
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                } else {
+
+                    // add normal file
+                    if ( $file_field_keys && is_array( $file_field_keys ) && in_array( $file_key, $file_field_keys ) ) {
+
+                        $field_details = CustomizationHelpers::operation_for_upload_media_in_customization_store( $file_key, $file_val, $field_details, $page_slug, $section_slug );
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        // add old normal file value
         if ( $file_field_keys && count( $file_field_keys ) > 0 ) {
 
             foreach ( $file_field_keys as $file_field_key ) {
 
-                $file_empty_flag = true;
+                if ( !array_key_exists( $file_field_key, $allFiles ) ) {
 
-                if ( array_key_exists( $file_field_key, $data ) ) {
+                    $if_exist = CustomizationSettings::where( 'name', $file_field_key )
+                    ->where( 'page_slug', $page_slug )
+                    ->where( 'section_slug', $section_slug )
+                    ->where( 'parent_id', 0 )
+                    ->whereNull( 'setting_type' )
+                    ->first();
 
-                    $file_field = request()->file( $file_field_key );
-
-                    if ( $file_field && request()->hasFile( $file_field_key ) ) {
-
-                        $old_files = $this->get_customization_specific_field_data( $page_slug, $section_slug, $file_field_key );
-
-                        if ( $old_files && isset( $old_files ) && !empty( $old_files ) && !is_null( $old_files ) ) {
-
-                            if ( is_array( $old_files ) && count( $old_files ) > 0 ) {
-
-                                foreach ( $old_files as $old_file ) {
-
-                                    Storage::delete( $old_file );
-
-                                }
-
-                            } else {
-
-                                Storage::delete( $old_files );
-
-                            }
-
-                        }
+                    if ( $if_exist ) {
                         
-                        if ( is_array( $file_field ) && count( $file_field ) > 0 ) {
+                        $field_details = CustomizationHelpers::operation_for_upload_media_in_customization_store( $file_field_key, null, $field_details, $page_slug, $section_slug );
 
-                            foreach ( $file_field as $file ) {
+                    }
 
-                                $path = $this->upload_media( $file );
+                }
 
-                                if ( $path && isset( $path ) && !empty( $path ) && !is_null( $path ) ) {
-                                    
-                                    $field_details[ $file_field_key ][] = $path;
+            }
 
-                                    $file_empty_flag = false;
+        }
+
+        // add old repeater file value
+        if ( $repeater_data && is_array( $repeater_data ) && count( $repeater_data ) > 0 ) {
+
+            foreach ( $repeater_data as $repeater_field_name => $repeater_field_datas ) {
+
+                if ( is_array( $repeater_field_keys ) && in_array( $repeater_field_name, $repeater_field_keys ) && is_array( $repeater_field_datas ) && count( $repeater_field_datas ) > 0 ) {
+
+                    foreach ( $repeater_field_datas as $repeater_row_index => $repeater_row_data ) {
+
+                        if ( is_array( $repeater_row_data ) && count( $repeater_row_data ) > 0 ) {
+
+                            foreach ( $repeater_row_data as $rp_row_field_name => $rp_row_field_val ) {
+
+                                $flag_key = $repeater_field_name.'###'.$repeater_row_index.'###'.$rp_row_field_name;
+
+                                if ( is_array( $file_flags_arr ) && count( $file_flags_arr ) > 0 && array_key_exists( $flag_key, $file_flags_arr ) ) {
+
+                                    if ( $rp_row_field_name == 'hidden' ) {
+
+                                        unset( $field_details[ $repeater_field_name ][ $repeater_row_index ][ $rp_row_field_name ] );
+
+                                    }
+
+                                } else {
+
+                                    if ( $rp_row_field_name == 'hidden' ) {
+
+                                        foreach ( $rp_row_field_val as $hidden_rp_row_field_name => $hidden_rp_row_field_val ) {
+
+                                            $hidden_flag_key = $repeater_field_name.'###'.$repeater_row_index.'###'.$hidden_rp_row_field_name;
+
+                                            if ( is_array( $file_flags_arr ) && !array_key_exists( $hidden_flag_key, $file_flags_arr ) ) {
+
+                                                $field_details[ $repeater_field_name ][ $repeater_row_index ][ $hidden_rp_row_field_name ] = $hidden_rp_row_field_val;
+
+                                            }
+
+                                        }
+
+                                        unset( $field_details[ $repeater_field_name ][ $repeater_row_index ][ $rp_row_field_name ] );
+
+                                    }
 
                                 }
-
-                            }
-
-                        } else {
-
-                            $path = $this->upload_media( $file_field );
-
-                            if ( $path && isset( $path ) && !empty( $path ) && !is_null( $path ) ) {
-
-                                $field_details[ $file_field_key ] = $path;
-
-                                $file_empty_flag = false;
 
                             }
 
@@ -976,17 +1072,6 @@ class CustomizationController extends Controller
 
                 }
 
-                if ( $file_empty_flag == true ) {
-                    
-                    $db_data = $this->get_customization_specific_field_data( $page_slug, $section_slug, $file_field_key );
-
-                    if ( $db_data && !empty( $db_data ) && !is_null( $db_data ) ) {
-
-                        $field_details[ $file_field_key ] = $db_data;
-
-                    }
-
-                }
             }
 
         }
@@ -1011,61 +1096,6 @@ class CustomizationController extends Controller
         return new JsonResponse([
             'message' => 'Save Customization Details Successfully',
         ]);
-    }
-
-    public function upload_media( $file )
-    {
-        $path = '';
-
-        if ( $file instanceof UploadedFile ) {
-
-            if ( Str::contains( $file->getMimeType(), 'image' ) ) {
-
-                $manager = new ImageManager();
-
-                $image = $manager->make( $file )->encode( 'webp' );
-
-                $path = $this->get_customization_directory() . '/' . Str::random( 40 ) . '.webp';
-
-                Storage::put( $path, $image );
-
-            } else {
-
-                $path = $file->store( $this->get_customization_directory() );
-
-            }
-
-        }
-
-        return $path;
-
-    }
-
-    public function get_customization_specific_field_data( $page_slug, $section_slug, $field_key )
-    {
-        $field_val = '';
-
-        $req_data = new Request();
-
-        $req_data->merge([
-            'page_slug' => $page_slug,
-            'section_slug' => $section_slug,
-            'field_key' => $field_key
-        ]);
-
-        $controller = new ShopCustomizationController();
-
-        $res_data = $controller->get_customization_details($req_data);
-
-        $res_data = $res_data && $res_data->original ? $res_data->original : [];
-
-        if ( array_key_exists( 'status_code', $res_data ) && $res_data[ 'status_code' ] == 200 && array_key_exists( 'status', $res_data ) && $res_data[ 'status' ] == 'success' ) {
-            
-            $field_val = ( array_key_exists( 'data', $res_data ) ) ? $res_data[ 'data' ] : '';
-
-        }
-
-        return $field_val;
     }
 
 }

@@ -13,6 +13,10 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => config('app.admin_ur
         'view' => 'wc_customization::admin.sections.index',
     ])->name('wc_customization.admin.customization.sections.index');
 
+    Route::get('customization/setting/{slug1}/{slug2}/{id}', [CustomizationController::class, 'repeater_sections_setting_index'])->defaults('_config', [
+        'view' => 'wc_customization::admin.sections.setting-repeater',
+    ])->name('wc_customization.admin.customization.sections.setting.repeater');
+
     Route::get('customization/setting/{slug1}/{slug2}', [CustomizationController::class, 'sections_setting_index'])->defaults('_config', [
         'view' => 'wc_customization::admin.sections.setting',
     ])->name('wc_customization.admin.customization.sections.setting');
@@ -37,8 +41,15 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => config('app.admin_ur
         'redirect' => 'wc_customization::admin.customization.index',
     ])->name('wc_customization.section.store');
 
+    Route::post('customization/section/setting/store', [CustomizationController::class, 'section_setting_store'])->defaults('_config', [
+        'redirect' => 'wc_customization::admin.customization.index',
+    ])->name('wc_customization.section.setting.store');
+
     Route::get('customization/page/edit/{id}', [CustomizationController::class, 'page_edit'])->name('wc_customization.page.edit');
     Route::get('customization/section/edit/{id}', [CustomizationController::class, 'section_edit'])->name('wc_customization.section.edit');
+    Route::get('customization/section/setting/edit/{id}', [CustomizationController::class, 'section_setting_edit'])->name('wc_customization.section.setting.edit');
+
+    Route::post('customization/section/setting/validate', [CustomizationController::class, 'section_setting_validate'])->name('wc_customization.section.setting.validate');
 
 });
 

@@ -1,18 +1,18 @@
 <x-admin::layouts>
     <x-slot:title>
-        {{ ( $customization_section && isset( $customization_section[ 'title' ] ) ) ? $customization_section[ 'title' ] . ' Settings' : __('Customization Sections Setting') }}{{ ( $customization_page && isset( $customization_page[ 'title' ] ) ) ? ' of ' . $customization_page[ 'title' ] . ' Page' : __(' of Page') }}
+        {{ ( $customization_setting && isset( $customization_setting[ 'title' ] ) ) ? $customization_setting[ 'title' ] . ' Repeater Settings' : __('Customization Repeater Sections Setting') }}{{ ( $customization_section && isset( $customization_section[ 'title' ] ) ) ? ' of ' . $customization_section[ 'title' ] . ' Section' : __(' of Section') }}{{ ( $customization_page && isset( $customization_page[ 'title' ] ) ) ? ' in ' . $customization_page[ 'title' ] . ' Page' : __(' in Page') }}
     </x-slot:title>
 
-    <v-wc-setting>
+    <v-wc-repeater-setting>
     
         <div class="flex gap-4 justify-between items-center max-sm:flex-wrap">
             <p class="text-xl text-gray-800 dark:text-white font-bold">
-                {{ ( $customization_section && isset( $customization_section[ 'title' ] ) ) ? $customization_section[ 'title' ] . ' Settings' : __('Customization Sections Setting') }}{{ ( $customization_page && isset( $customization_page[ 'title' ] ) ) ? ' of ' . $customization_page[ 'title' ] . ' Page' : __(' of Page') }}
+                {{ ( $customization_setting && isset( $customization_setting[ 'title' ] ) ) ? $customization_setting[ 'title' ] . ' Repeater Settings' : __('Customization Repeater Sections Setting') }}{{ ( $customization_section && isset( $customization_section[ 'title' ] ) ) ? ' of ' . $customization_section[ 'title' ] . ' Section' : __(' of Section') }}{{ ( $customization_page && isset( $customization_page[ 'title' ] ) ) ? ' in ' . $customization_page[ 'title' ] . ' Page' : __(' in Page') }}
             </p>
 
             <div class="flex gap-x-[10px] items-center">
                 <!-- Back Button -->
-                <a  href="{{ route('wc_customization.admin.customization.pages.index', $page_slug) }}" 
+                <a  href="{{ route('wc_customization.admin.customization.sections.setting', [ $page_slug, $section_slug ]) }}" 
                     class="transparent-button hover:bg-gray-200 dark:hover:bg-gray-800 dark:text-white"
                 >Back</a>
 
@@ -20,41 +20,41 @@
                     type="button"
                     class="primary-button"
                     >
-                    {{ __('Create Setting') }}
+                    {{ __('Create Repeater Setting') }}
                 </button>
             </div>        
         </div>
     
-    </v-wc-setting>
+    </v-wc-repeater-setting>
 
     @pushOnce('scripts')
         <script
             type="text/x-template"
-            id="v-wc-setting-template"
+            id="v-wc-repeater-setting-template"
         >
 
             <div class="flex  gap-4 justify-between items-center max-sm:flex-wrap">
                 <p class="text-xl text-gray-800 dark:text-white font-bold">
-                    {{ ( $customization_section && isset( $customization_section[ 'title' ] ) ) ? $customization_section[ 'title' ] . ' Settings' : __('Customization Sections Setting') }}{{ ( $customization_page && isset( $customization_page[ 'title' ] ) ) ? ' of ' . $customization_page[ 'title' ] . ' Page' : __(' of Page') }}
+                    {{ ( $customization_setting && isset( $customization_setting[ 'title' ] ) ) ? $customization_setting[ 'title' ] . ' Repeater Settings' : __('Customization Repeater Sections Setting') }}{{ ( $customization_section && isset( $customization_section[ 'title' ] ) ) ? ' of ' . $customization_section[ 'title' ] . ' Section' : __(' of Section') }}{{ ( $customization_page && isset( $customization_page[ 'title' ] ) ) ? ' in ' . $customization_page[ 'title' ] . ' Page' : __(' in Page') }}
                 </p>
 
                 <div class="flex gap-x-2.5 items-center">
-                    <a  href="{{ route('wc_customization.admin.customization.pages.index', $page_slug) }}" 
+                    <a  href="{{ route('wc_customization.admin.customization.sections.setting', [ $page_slug, $section_slug ]) }}" 
                         class="transparent-button hover:bg-gray-200 dark:hover:bg-gray-800 dark:text-white"
                     >Back</a>
 
-                    <!-- Setting Create Button -->
+                    <!-- Repeater Setting Create Button -->
                     <button
                         type="button"
                         class="primary-button"
-                        @click="resetForm();$refs.sectionSettingUpdateOrCreateModal.toggle()"
+                        @click="resetForm();$refs.repeaterSettingUpdateOrCreateModal.toggle()"
                     >
-                        {{ __('Create Setting') }}
+                        {{ __('Create Repeater Setting') }}
                     </button>
                 </div>
             </div>
 
-            <x-admin::datagrid :src="route('wc_customization.admin.customization.sections.setting', [ $page_slug, $section_slug ])" ref="datagrid">
+            <x-admin::datagrid :src="route('wc_customization.admin.customization.sections.setting.repeater', [ $page_slug, $section_slug, $id ])" ref="datagrid">
                 <!-- DataGrid Body -->
                 <template #body="{ columns, records, performAction }">
                     <div
@@ -86,15 +86,6 @@
                                 >
                                 </span>
                             </a>
-                            <span v-if="record.type == 'repeater'">
-                                <a :href="record.actions.find(action => action.index === 'repeater_section_settings')?.url">
-                                    <span
-                                        :class="record.actions.find(action => action.index === 'repeater_section_settings')?.icon"
-                                        class="cursor-pointer rounded-md p-1.5 text-2xl transition-all hover:bg-gray-200 dark:hover:bg-gray-800 max-sm:place-self-center"
-                                    >
-                                    </span>
-                                </a>
-                            </span>
                         </div>
                     </div>
                 </template>
@@ -106,15 +97,15 @@
                 ref="modalForm"
             >
                 <form
-                    @submit="handleSubmit($event, updateOrCreateSectionSetting)"
-                    ref="createSectionSetingForm"
+                    @submit="handleSubmit($event, updateOrCreateRepeaterSetting)"
+                    ref="createRepeaterSetingForm"
                 >
 
-                    <x-admin::modal ref="sectionSettingUpdateOrCreateModal">
+                    <x-admin::modal ref="repeaterSettingUpdateOrCreateModal">
                         <!-- Modal Header -->
                         <x-slot:header>
                             <p class="text-lg text-gray-800 dark:text-white font-bold">
-                                <span>{{ ( $customization_section && isset( $customization_section[ 'title' ] ) ) ? $customization_section[ 'title' ] . ' Settings' : __('Customization Sections Setting') }}{{ ( $customization_page && isset( $customization_page[ 'title' ] ) ) ? ' of ' . $customization_page[ 'title' ] . ' Page' : __(' of Page') }}</span>
+                                <span>{{ ( $customization_setting && isset( $customization_setting[ 'title' ] ) ) ? $customization_setting[ 'title' ] . ' Repeater Settings' : __('Customization Repeater Sections Setting') }}{{ ( $customization_section && isset( $customization_section[ 'title' ] ) ) ? ' of ' . $customization_section[ 'title' ] . ' Section' : __(' of Section') }}{{ ( $customization_page && isset( $customization_page[ 'title' ] ) ) ? ' in ' . $customization_page[ 'title' ] . ' Page' : __(' in Page') }}</span>
                             </p>
                         </x-slot>
 
@@ -125,7 +116,19 @@
                                 type="hidden"
                                 name="section_setting_id"
                                 id="section_setting_id"
-                                v-model="section_setting_data.id"
+                                v-model="repeater_setting_data.id"
+                            />
+
+                            <x-admin::form.control-group.control
+                                type="hidden"
+                                name="setting_parent_id"
+                                v-model="setting_parent_id"
+                            />
+
+                            <x-admin::form.control-group.control
+                                type="hidden"
+                                name="setting_type"
+                                v-model="setting_type"
                             />
 
                             <x-admin::form.control-group.control
@@ -150,7 +153,7 @@
                                     id="field_status"
                                     class="cursor-pointer field_status"
                                     name="field_status"
-                                    v-model="section_setting_data.status"
+                                    v-model="repeater_setting_data.status"
                                     value="1"
                                     label="Visible in Section?"
                                 >
@@ -173,7 +176,7 @@
                                     class="cursor-pointer field_type"
                                     name="field_type"
                                     rules="required"
-                                    v-model="section_setting_data.type"
+                                    v-model="repeater_setting_data.type"
                                     label="Select Field Type"
                                     placeholder="Select Field Type"
                                     @change="changeFieldType($event)"
@@ -197,7 +200,7 @@
                                     name="field_title"
                                     class="field_title"
                                     rules="required"
-                                    v-model="section_setting_data.title"
+                                    v-model="repeater_setting_data.title"
                                     label="Field Title"
                                     placeholder="Field Title"
                                 />
@@ -216,7 +219,7 @@
                                     name="field_name"
                                     class="field_name"
                                     rules="required"
-                                    v-model="section_setting_data.name"
+                                    v-model="repeater_setting_data.name"
                                     label="Field Name"
                                     placeholder="Field Name"
                                     @change="changeFieldCode($event)"
@@ -240,7 +243,7 @@
                                     class="cursor-pointer field_required"
                                     name="field_required"
                                     rules="required"
-                                    v-model="section_setting_data.required"
+                                    v-model="repeater_setting_data.required"
                                     value="0"
                                     label="Field is Required?"
                                 >
@@ -262,7 +265,7 @@
                                     id="field_multiple"
                                     class="cursor-pointer field_multiple"
                                     name="field_multiple"
-                                    v-model="section_setting_data.multiple"
+                                    v-model="repeater_setting_data.multiple"
                                     value="0"
                                     label="Field is Multiple?"
                                 >
@@ -284,7 +287,7 @@
                                     id="field_option"
                                     name="field_option"
                                     class="field_option"
-                                    v-model="section_setting_data.options"
+                                    v-model="repeater_setting_data.options"
                                     value=""
                                     label="Field Options"
                                 />
@@ -314,12 +317,12 @@
         </script>
 
         <script type="module">
-            app.component('v-wc-setting', {
-                template: '#v-wc-setting-template',
+            app.component('v-wc-repeater-setting', {
+                template: '#v-wc-repeater-setting-template',
 
                 data() {
                     return {
-                        section_setting_data: {
+                        repeater_setting_data: {
                             options: null,
                             page_slug: null,
                             section_slug: null,
@@ -330,16 +333,15 @@
                         
                         section_slug: '{{$section_slug}}',
 
+                        setting_parent_id: '{{$id}}',
+
+                        setting_type: 'repeater',
+
                         types : [
                             { option_key: 'text', option_val: 'Text Box' },
                             { option_key: 'select', option_val: 'Select Field' },
                             { option_key: 'textarea', option_val: 'Text Area' },
                             { option_key: 'file', option_val: 'File' },
-                            { option_key: 'product', option_val: 'Product' },
-                            { option_key: 'category', option_val: 'Category' },
-                            { option_key: 'category_product', option_val: 'Category Product' },
-                            { option_key: 'blog', option_val: 'Blog' },
-                            { option_key: 'repeater', option_val: 'Repeater' },
                         ],
                     }
                 },
@@ -365,19 +367,12 @@
                     changeFieldType(e) {
                         var field_type_val = e.target.value ? e.target.value : null;
                         if ( field_type_val == 'select' ) {
-                            document.querySelector('.field_required_main').classList.remove('hidden');
                             document.querySelector('.field_option_main').classList.remove('hidden');
                             document.querySelector('.field_multiple_main').classList.remove('hidden');
-                        } else if ( field_type_val == 'file' || field_type_val == 'product' || field_type_val == 'category' || field_type_val == 'category_product' || field_type_val == 'blog' ) {
-                            document.querySelector('.field_required_main').classList.remove('hidden');
+                        } else if ( field_type_val == 'file' ) {
+                            document.querySelector('.field_option_main').classList.add('hidden');
                             document.querySelector('.field_multiple_main').classList.remove('hidden');
-                            document.querySelector('.field_option_main').classList.add('hidden');
-                        } else if ( field_type_val == 'repeater' ) {
-                            document.querySelector('.field_required_main').classList.add('hidden');
-                            document.querySelector('.field_option_main').classList.add('hidden');
-                            document.querySelector('.field_multiple_main').classList.add('hidden');
                         } else {
-                            document.querySelector('.field_required_main').classList.remove('hidden');
                             document.querySelector('.field_option_main').classList.add('hidden');
                             document.querySelector('.field_multiple_main').classList.add('hidden');
                         }
@@ -390,7 +385,7 @@
                         var section = '{{$section_slug}}';
                         var section_setting_id = document.getElementById('section_setting_id').value;
                         var field_name_already = document.getElementById('field_name_already');
-
+                        
                         if (field_name_already) {
                             field_name_already.remove();
                         }
@@ -400,7 +395,7 @@
                         formData.append( 'page_slug', page );
                         formData.append( 'section_slug', section );
                         formData.append( 'section_setting_id', section_setting_id );
-
+                        
                         this.$axios.post("{{ route('wc_customization.section.setting.validate') }}", formData, {
                             headers: {
                                 'Content-Type': 'multipart/form-data'
@@ -422,8 +417,8 @@
                         });
                     },
 
-                    updateOrCreateSectionSetting(params, { resetForm, setErrors  }) {
-                        let formData = new FormData(this.$refs.createSectionSetingForm);
+                    updateOrCreateRepeaterSetting(params, { resetForm, setErrors  }) {
+                        let formData = new FormData(this.$refs.createRepeaterSetingForm);
 
                         this.$axios.post("{{ route('wc_customization.section.setting.store') }}", formData, {
                             headers: {
@@ -431,7 +426,7 @@
                             }
                         })
                         .then((response) => {
-                            this.$refs.sectionSettingUpdateOrCreateModal.close();
+                            this.$refs.repeaterSettingUpdateOrCreateModal.close();
 
                             this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
 
@@ -449,7 +444,7 @@
                     editModal(url) {
                         this.$axios.get(url)
                             .then((response) => {
-                                this.section_setting_data = {
+                                this.repeater_setting_data = {
                                     ...response.data.data,
                                         
                                         options : response.data.data.type == 'select' 
@@ -460,8 +455,10 @@
 
                                 this.page_slug = '{{$page_slug}}';
                                 this.section_slug = '{{$section_slug}}';
+                                this.setting_parent_id = '{{$id}}';
+                                this.setting_type = 'repeater';
 
-                                this.$refs.sectionSettingUpdateOrCreateModal.toggle();
+                                this.$refs.repeaterSettingUpdateOrCreateModal.toggle();
 
                                 setTimeout(function() {
                                     const changeEvent = new Event('change', {
@@ -480,11 +477,13 @@
                     },
 
                     resetForm() {
-                        this.section_setting_data = {
+                        this.repeater_setting_data = {
                             image: [],
                         };
                         this.page_slug = '{{$page_slug}}';
                         this.section_slug = '{{$section_slug}}';
+                        this.setting_parent_id = '{{$id}}';
+                        this.setting_type = 'repeater';
                     }
                 },
             });
