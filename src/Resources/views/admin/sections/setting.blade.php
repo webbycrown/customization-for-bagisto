@@ -95,6 +95,16 @@
                                     </span>
                                 </a>
                             </span>
+
+                            <a @click="deleteSetting(record.actions.find(action => action.index === 'setting_delete')?.url)">
+                                <span
+                                    :class="record.actions.find(action => action.index === 'setting_delete')?.icon"
+                                    class="cursor-pointer rounded-md p-1.5 text-2xl transition-all hover:bg-gray-200 dark:hover:bg-gray-800 max-sm:place-self-center"
+                                >
+                                </span>
+                            </a>
+
+
                         </div>
                     </div>
                 </template>
@@ -180,7 +190,11 @@
                                 >
                                     <!-- Options -->
                                     <option value="">Select Field Type</option>
-                                    <option v-for="type_data in types" :value="type_data.option_key">@{{type_data.option_val}}</option>
+                                    @if( $types && is_array( $types ) && count( $types ) > 0 )
+                                        @foreach( $types as $type_data )
+                                            <option value="{{ $type_data[ 'option_key' ] }}">{{ $type_data[ 'option_val' ] }}</option>
+                                        @endforeach
+                                    @endif
                                 </x-admin::form.control-group.control>
 
                                 <x-admin::form.control-group.error control-name="field_type" />
@@ -329,18 +343,6 @@
                         page_slug: '{{$page_slug}}',
                         
                         section_slug: '{{$section_slug}}',
-
-                        types : [
-                            { option_key: 'text', option_val: 'Text Box' },
-                            { option_key: 'select', option_val: 'Select Field' },
-                            { option_key: 'textarea', option_val: 'Text Area' },
-                            { option_key: 'file', option_val: 'File' },
-                            { option_key: 'product', option_val: 'Product' },
-                            { option_key: 'category', option_val: 'Category' },
-                            { option_key: 'category_product', option_val: 'Category Product' },
-                            { option_key: 'blog', option_val: 'Blog' },
-                            { option_key: 'repeater', option_val: 'Repeater' },
-                        ],
                     }
                 },
 
@@ -485,6 +487,23 @@
                         };
                         this.page_slug = '{{$page_slug}}';
                         this.section_slug = '{{$section_slug}}';
+                    },
+
+                    deleteSetting(url) {
+                        this.$emitter.emit('open-confirm-modal', {
+                            message: 'Are you sure you want to delete section setting and also delete this value?',
+                            agree: () => {
+                                this.$axios.delete(url)
+                                .then(response => {
+                                    this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
+
+                                    this.$refs.datagrid.get();
+                                })
+                                .catch((error) => {
+                                    this.$emitter.emit('add-flash', { type: 'error', message: error.response.data.message });
+                                });
+                            }
+                        });
                     }
                 },
             });

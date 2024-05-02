@@ -1,10 +1,19 @@
 <?php
 
+/**
+ * Namespace for customizations related to datagrids within the Webbycrown application.
+ * This namespace organizes code related to manipulating and displaying data in tabular format.
+ */
 namespace Webbycrown\Customization\Datagrids;
 
 use Illuminate\Support\Facades\DB;
 use Webkul\DataGrid\DataGrid;
+use Webbycrown\Customization\Helpers\CustomizationHelpers;
 
+/**
+ * Represents a customized data grid component specialized for a specific section.
+ * Extends functionality from the DataGrid class.
+ */
 class CustomizationSectionDataGrid extends DataGrid
 {
     /**
@@ -45,6 +54,15 @@ class CustomizationSectionDataGrid extends DataGrid
         'locales',
     ];
 
+    /**
+     * Prepares a query builder for database operations.
+     * 
+     * This method initializes or configures a query builder object
+     * for performing database operations. It may set up initial conditions,
+     * select columns, apply filters, or perform other necessary setup steps.
+     * 
+     * @return QueryBuilder The prepared query builder object.
+     */
     public function prepareQueryBuilder()
     {
         $page_slug = request()->route('slug1');
@@ -54,17 +72,11 @@ class CustomizationSectionDataGrid extends DataGrid
     	return $queryBuilder;
     }
 
+    /**
+     * Prepares columns for data processing.
+     */
     public function prepareColumns()
     {
-        // $this->addColumn([
-        //     'index' => 'id',
-        //     'label' => 'ID',
-        //     'type' => 'integer',
-        //     'searchable' => false,
-        //     'sortable' => true,
-        //     'filterable' => true,
-        // ]);
-
         $this->addColumn([
             'index' => 'title',
             'label' => 'Title',
@@ -72,6 +84,9 @@ class CustomizationSectionDataGrid extends DataGrid
             'searchable' => true,
             'sortable' => true,
             'filterable' => false,
+            'closure'    => function ($row) {
+                return CustomizationHelpers::get_string_with_breack_with_space( $row->title, 35 );
+            }
         ]);
 
         $this->addColumn([
@@ -81,10 +96,17 @@ class CustomizationSectionDataGrid extends DataGrid
             'searchable' => true,
             'sortable' => true,
             'filterable' => false,
+            'closure'    => function ($row) {
+                return CustomizationHelpers::get_string_with_breack_without_space( $row->slug, 35 );
+            }
         ]);
 
     }
 
+    /**
+     * This function prepares actions.
+     * It currently lacks implementation details and requires further development.
+     */
     public function prepareActions()
     {
     	$this->addAction([
@@ -99,8 +121,6 @@ class CustomizationSectionDataGrid extends DataGrid
 
         $this->addAction([
             'index' => 'section_exit',
-            // 'icon' => 'icon-exit',
-            // 'icon' => 'icon-magic',
             'icon' => 'icon-edit-save',
             'title' => 'Section',
             'method' => 'GET',
@@ -119,36 +139,23 @@ class CustomizationSectionDataGrid extends DataGrid
             },
         ]);
 
-    	// $this->addAction([
-    	// 	'title' => 'edit',
-    	// 	'method' => 'GET',
-    	// 	'icon' => 'icon-edit',
-    	// 	'route' => 'admin.blog.edit',
-    	// 	'url'    => function ($row) {
-    	// 		return route('admin.blog.edit', $row->id);
-    	// 	},
-    	// ]);
-
-    	// $this->addAction([
-    	// 	'title' => 'delete',
-    	// 	'method' => 'POST',
-    	// 	'icon' => 'icon-delete',
-    	// 	'route' => 'admin.blog.delete',
-    	// 	'url'    => function ($row) {
-    	// 		return route('admin.blog.delete', $row->id);
-    	// 	},
-    	// ]);
+        $this->addAction([
+            'index' => 'section_delete',
+            'icon'   => 'icon-delete',
+            'title'  => 'Delete',
+            'method' => 'DELETE',
+            'url'    => function ($row) {
+                return route('wc_customization.section.delete', $row->id);
+            },
+        ]);
     }
 
+    /**
+     * Placeholder function for preparing mass actions.
+     * This function is intended to handle preparations required for mass actions, 
+     * but currently lacks implementation. Further development is needed.
+     */
     public function prepareMassActions()
     {
-    	// $this->addMassAction([
-    	// 	'type'   => 'delete',
-    	// 	'label'  => trans('admin::app.datagrid.delete'),
-    	// 	'title'  => 'Delete',
-    	// 	'action' => route('admin.blog.massdelete'),
-    	// 	'url' => route('admin.blog.massdelete'),
-    	// 	'method' => 'POST',
-    	// ]);
     }
 }

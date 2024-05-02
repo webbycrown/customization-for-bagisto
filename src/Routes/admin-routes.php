@@ -8,48 +8,75 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => config('app.admin_ur
     /**
      * Admin customization routes
      */
+    Route::prefix('customization')->group(function () {
 
-    Route::get('customization/{slug1}/{slug2}', [CustomizationController::class, 'sections_index'])->defaults('_config', [
-        'view' => 'wc_customization::admin.sections.index',
-    ])->name('wc_customization.admin.customization.sections.index');
+        Route::controller(CustomizationController::class)->group(function () {
 
-    Route::get('customization/setting/{slug1}/{slug2}/{id}', [CustomizationController::class, 'repeater_sections_setting_index'])->defaults('_config', [
-        'view' => 'wc_customization::admin.sections.setting-repeater',
-    ])->name('wc_customization.admin.customization.sections.setting.repeater');
+            Route::get('/{slug1}/{slug2}', 'sections_index')
+                    ->defaults('_config', ['view' => 'wc_customization::admin.sections.index'])
+                    ->name('wc_customization.admin.customization.sections.index');
 
-    Route::get('customization/setting/{slug1}/{slug2}', [CustomizationController::class, 'sections_setting_index'])->defaults('_config', [
-        'view' => 'wc_customization::admin.sections.setting',
-    ])->name('wc_customization.admin.customization.sections.setting');
+            Route::get('/setting/{slug1}/{slug2}/{id}', 'repeater_sections_setting_index')
+                    ->defaults('_config', ['view' => 'wc_customization::admin.sections.setting-repeater'])
+                    ->name('wc_customization.admin.customization.sections.setting.repeater');
 
-    Route::get('customization/{slug1}', [CustomizationController::class, 'pages_index'])->defaults('_config', [
-        'view' => 'wc_customization::admin.pages.index-form',
-    ])->name('wc_customization.admin.customization.pages.index');
+            Route::get('/setting/{slug1}/{slug2}', 'sections_setting_index')
+                    ->defaults('_config', ['view' => 'wc_customization::admin.sections.setting'])
+                    ->name('wc_customization.admin.customization.sections.setting');
 
-    Route::get('customization', [CustomizationController::class, 'index'])->defaults('_config', [
-        'view' => 'wc_customization::admin.customization.index-form',
-    ])->name('wc_customization.admin.customization.index');
+            Route::get('/{slug1}', 'pages_index')
+                    ->defaults('_config', ['view' => 'wc_customization::admin.pages.index'])
+                    ->name('wc_customization.admin.customization.pages.index');
 
-    Route::post('customization/store', [CustomizationController::class, 'store'])->defaults('_config', [
-        'redirect' => 'wc_customization::admin.customization.index',
-    ])->name('wc_customization.customization.store');
+            Route::get('/', 'index')
+                    ->defaults('_config', ['view' => 'wc_customization::admin.customization.index'])
+                    ->name('wc_customization.admin.customization.index');
 
-    Route::post('customization/page/store', [CustomizationController::class, 'page_store'])->defaults('_config', [
-        'redirect' => 'wc_customization::admin.customization.index',
-    ])->name('wc_customization.page.store');
+            Route::post('/store', 'store')
+                    ->defaults('_config', ['redirect' => 'wc_customization::admin.customization.index'])
+                    ->name('wc_customization.customization.store');
 
-    Route::post('customization/section/store', [CustomizationController::class, 'section_store'])->defaults('_config', [
-        'redirect' => 'wc_customization::admin.customization.index',
-    ])->name('wc_customization.section.store');
+            Route::prefix('page')->group(function () {
 
-    Route::post('customization/section/setting/store', [CustomizationController::class, 'section_setting_store'])->defaults('_config', [
-        'redirect' => 'wc_customization::admin.customization.index',
-    ])->name('wc_customization.section.setting.store');
+                Route::post('/store', 'page_store')
+                        ->defaults('_config', ['redirect' => 'wc_customization::admin.customization.index'])
+                        ->name('wc_customization.page.store');
 
-    Route::get('customization/page/edit/{id}', [CustomizationController::class, 'page_edit'])->name('wc_customization.page.edit');
-    Route::get('customization/section/edit/{id}', [CustomizationController::class, 'section_edit'])->name('wc_customization.section.edit');
-    Route::get('customization/section/setting/edit/{id}', [CustomizationController::class, 'section_setting_edit'])->name('wc_customization.section.setting.edit');
+                Route::get('/edit/{id}', 'page_edit')->name('wc_customization.page.edit');
 
-    Route::post('customization/section/setting/validate', [CustomizationController::class, 'section_setting_validate'])->name('wc_customization.section.setting.validate');
+                Route::delete('/delete/{id}', 'page_delete')->name('wc_customization.page.delete');
+
+            });
+
+            Route::prefix('section')->group(function () {
+
+                Route::post('/store', 'section_store')
+                        ->defaults('_config', ['redirect' => 'wc_customization::admin.customization.index'])
+                        ->name('wc_customization.section.store');
+
+                Route::get('/edit/{id}', 'section_edit')->name('wc_customization.section.edit');
+
+                Route::delete('/delete/{id}', 'section_delete')->name('wc_customization.section.delete');
+
+                Route::prefix('setting')->group(function () {
+
+                    Route::post('/store', 'section_setting_store')
+                            ->defaults('_config', ['redirect' => 'wc_customization::admin.customization.index'])
+                            ->name('wc_customization.section.setting.store');
+
+                    Route::get('/edit/{id}', 'section_setting_edit')->name('wc_customization.section.setting.edit');
+
+                    Route::delete('/delete/{id}', 'section_setting_delete')->name('wc_customization.section.setting.delete');
+
+                    Route::post('/validate', 'section_setting_validate')->name('wc_customization.section.setting.validate');
+
+                });
+
+            });
+
+        });
+
+    });
 
 });
 

@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * Namespace containing controller classes responsible for handling admin-related operations.
+ */
 namespace Webbycrown\Customization\Http\Controllers\Admin;
 
 use Illuminate\Routing\Controller;
@@ -29,6 +32,9 @@ use Webbycrown\BlogBagisto\Models\Blog;
 use Carbon\Carbon;
 use Webbycrown\Customization\Helpers\CustomizationHelpers;
 
+/**
+ * Controller class responsible for handling customization logic for admin.
+ */
 class CustomizationController extends Controller
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests;
@@ -53,16 +59,10 @@ class CustomizationController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\View\View
+     * Display the index page.
      */
     public function index()
     {
-        // $customizations = CustomizationHelpers::get_customizations_data();
-
-        // $pages = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'pages', $customizations) ) ? $customizations[ 'pages' ] : [];
-
         if ( request()->ajax() ) {
 
             return app(CustomizationPageDataGrid::class)->toJson();
@@ -70,12 +70,13 @@ class CustomizationController extends Controller
         }
 
         return view( $this->_config[ 'view' ] );
-        // return view( $this->_config[ 'view' ], compact( 'customizations' ) );
-
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Edit a page by its ID.
+     *
+     * @param int $id The ID of the page to edit.
+     * @return \Illuminate\Http\JsonResponse A JSON response indicating the result of the edit operation.
      */
     public function page_edit(int $id): JsonResponse
     {
@@ -87,7 +88,10 @@ class CustomizationController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Edit a section based on the provided ID.
+     *
+     * @param int $id The ID of the section to edit.
+     * @return JsonResponse The JSON response indicating the result of the edit operation.
      */
     public function section_edit(int $id): JsonResponse
     {
@@ -99,7 +103,10 @@ class CustomizationController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Retrieves and prepares data for editing a section setting.
+     *
+     * @param int $id The ID of the section setting to edit.
+     * @return JsonResponse The JSON response containing the data for editing the section setting.
      */
     public function section_setting_edit(int $id): JsonResponse
     {
@@ -123,40 +130,36 @@ class CustomizationController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Retrieves the list of a page based on its slug.
      *
-     * @return \Illuminate\View\View
+     * @param string $page_slug The slug of the page.
+     * @return int|false The list of the page if found, otherwise false.
      */
     public function pages_index( $page_slug )
     {
-        // $customizations = CustomizationHelpers::get_customization_data_by_slug( $page_slug );
-
-        // $sections = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'sections', $customizations) ) ? $customizations[ 'sections' ] : [];
-
         if ( request()->ajax() ) {
 
             return app(CustomizationSectionDataGrid::class)->toJson();
 
         }
 
-        // $customization_page = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'page', $customizations ) ) ? $customizations[ 'page' ] : [];
-
-        // if ( !$customization_page || empty( $customization_page ) ) {
-        //     abort( 404 );
-        // }
-
-        // return view( $this->_config[ 'view' ], compact( 'page_slug', 'customization_page', 'sections', 'customizations' ) );
-
         $customization_page = CustomizationPages::where( 'slug', $page_slug )->firstOrFail();
 
-        return view( $this->_config[ 'view' ], compact( 'page_slug', 'customization_page' ) );
+        if ( CustomizationHelpers::check_customization_s3_enabled() ) {
 
+            CustomizationHelpers::update_aws_details_in_env_file_for_customization();
+            
+        }
+
+        return view( $this->_config[ 'view' ], compact( 'page_slug', 'customization_page' ) );
     }
 
     /**
-     * Display a listing of the resource.
+     * Retrieve the list of a section setting.
      *
-     * @return \Illuminate\View\View
+     * @param string $page_slug    The slug of the page.
+     * @param string $section_slug The slug of the section.
+     * @return int|null            The list of the section setting, or null if not found.
      */
     public function sections_setting_index( $page_slug, $section_slug )
     {
@@ -166,29 +169,36 @@ class CustomizationController extends Controller
 
         }
 
-        // $customizations = CustomizationHelpers::get_customization_data_by_slug( $page_slug, $section_slug );
-
-        // $fields = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'fields', $customizations ) ) ? $customizations[ 'fields' ] : [];
-
-        // $customization_section = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'section', $customizations ) ) ? $customizations[ 'section' ] : [];
-
-        // if ( !$customization_section || empty( $customization_section ) ) {
-        //     abort( 404 );
-        // }
-
-        // return view( $this->_config[ 'view' ], compact( 'page_slug', 'section_slug', 'customization_section', 'customizations', 'fields' ) );
-
         $customization_page = CustomizationPages::where( 'slug', $page_slug )->firstOrFail();
 
         $customization_section = CustomizationSections::where( 'page_slug', $page_slug )->where( 'slug', $section_slug )->firstOrFail();
 
-        return view( $this->_config[ 'view' ], compact( 'page_slug', 'section_slug', 'customization_section', 'customization_page' ) );
+        $types = array(
+            array( 'option_key' => 'text',              'option_val' => 'Text Box' ),
+            array( 'option_key' => 'select',            'option_val' => 'Select Field' ),
+            array( 'option_key' => 'textarea',          'option_val' => 'Text Area' ),
+            array( 'option_key' => 'file',              'option_val' => 'File' ),
+            array( 'option_key' => 'product',           'option_val' => 'Product' ),
+            array( 'option_key' => 'category',          'option_val' => 'Category' ),
+            array( 'option_key' => 'category_product',  'option_val' => 'Category Product' ),
+            array( 'option_key' => 'repeater',          'option_val' => 'Repeater' ),
+        );
+
+        if ( class_exists( 'Webbycrown\BlogBagisto\Providers\BlogServiceProvider' ) ) {
+
+            $types[] = array( 'option_key' => 'blog', 'option_val' => 'Blog' );
+
+        }
+
+        return view( $this->_config[ 'view' ], compact( 'page_slug', 'section_slug', 'customization_section', 'customization_page', 'types' ) );
     }
 
     /**
-     * Display a listing of the resource.
+     * Listing for repeater sections setting.
      *
-     * @return \Illuminate\View\View
+     * @param string $page_slug    The slug of the page.
+     * @param string $section_slug The slug of the section.
+     * @param int    $id           The ID of the section.
      */
     public function repeater_sections_setting_index( $page_slug, $section_slug, $id )
     {
@@ -197,18 +207,6 @@ class CustomizationController extends Controller
             return app(CustomizationSettingDataGrid::class)->toJson();
 
         }
-
-        // $customizations = CustomizationHelpers::get_customization_data_by_slug( $page_slug, $section_slug );
-
-        // $fields = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'fields', $customizations ) ) ? $customizations[ 'fields' ] : [];
-
-        // $customization_section = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'section', $customizations ) ) ? $customizations[ 'section' ] : [];
-
-        // if ( !$customization_section || empty( $customization_section ) ) {
-        //     abort( 404 );
-        // }
-
-        // return view( $this->_config[ 'view' ], compact( 'id', 'page_slug', 'section_slug', 'customization_section', 'customizations', 'fields' ) );
 
         $customization_setting = CustomizationSettings::where( 'id', $id )->firstOrFail();
 
@@ -220,9 +218,11 @@ class CustomizationController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Retrieves data for a specific section within a page.
      *
-     * @return \Illuminate\View\View
+     * @param string $page_slug     The slug of the page.
+     * @param string $section_slug  The slug of the section within the page.
+     * @return mixed                Data related to the specified section.
      */
     public function sections_index( $page_slug, $section_slug )
     {
@@ -252,320 +252,114 @@ class CustomizationController extends Controller
 
                     $section_field_val = array_key_exists( $field[ 'name' ], $field_details ) ? $field_details[ $field[ 'name' ] ] : '';
 
-                    if ( $field[ 'type' ] == 'text' ) {
-                        
-                        $section_form .= '<div class="mb-4">
-                                            <label class="flex gap-1 items-center mb-1.5 text-xs text-gray-800 dark:text-white font-medium ' . $required_field . '">' . $field[ 'title' ] . '</label>
-                                            <input 
-                                                type="' . $field[ 'type' ] . '" 
-                                                name="field_details[' . $field[ 'name' ] . ']" 
-                                                class="w-full py-2.5 px-3 border rounded-md text-sm text-gray-600 dark:text-gray-300 transition-all hover:border-gray-400 dark:hover:border-gray-400 focus:border-gray-400 dark:focus:border-gray-400 dark:bg-gray-900 dark:border-gray-800" 
-                                                id="' . $field[ 'name' ] . '" 
-                                                placeholder="' . $field[ 'title' ] . '"
-                                                value="' . $section_field_val . '"
-                                                ' . $required_field . '
-                                            >
-                                        </div>';
+                    $multiple_flag = ( array_key_exists( 'multiple', $field ) && $field[ 'multiple' ] == true ) ? true : false;
 
-                    }
+                    $multiple_option = ( $multiple_flag == true ) ? 'multiple' : '';
 
-                    if ( $field[ 'type' ] == 'select' ) {
+                    if ( in_array( $field[ 'type' ], array( 'text', 'select', 'textarea' ) ) ) {
 
-                        $section_option = '';
+                        $field_input_name = ( $field[ 'type' ] == 'select' && $multiple_flag == true ) ? 'field_details[' . $field[ 'name' ] . '][]' : 'field_details[' . $field[ 'name' ] . ']';
 
-                        if ( array_key_exists( 'options', $field ) &&  $field[ 'options' ] && count( $field[ 'options' ] ) > 0 ) {
-                            
-                            foreach ( $field[ 'options' ] as $option_key => $option_val ) {
+                        if ( $field[ 'type' ] == 'select' ) {
 
-                                $selected_val = ( $section_field_val == $option_key ) ? 'selected' : '';
-                                
-                                $section_option .= '<option value="'.$option_key.'" '.$selected_val.'>'.$option_val.'</option>';
-
-                            }
+                            $section_field_val = ( is_array( $section_field_val ) ) ? $section_field_val : array( $section_field_val );
 
                         }
                         
-                        $section_form .= '<div class="mb-4">
-                                            <label class="flex gap-1 items-center mb-1.5 text-xs text-gray-800 dark:text-white font-medium ' . $required_field . '">' . $field[ 'title' ] . '</label>
-                                            <select 
-                                                name="field_details[' . $field[ 'name' ] . ']" 
-                                                class="custom-select w-full py-2.5 px-3 bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-md text-sm text-gray-600 dark:text-gray-300 font-normal transition-all hover:border-gray-400 dark:hover:border-gray-400" 
-                                                id="' . $field[ 'name' ] . '"
-                                                ' . $required_field . '
-                                            >
-                                                <option value=""> Select ' . $field[ 'title' ] . ' </option>
-                                                ' . $section_option . '
-                                            </select>
-                                        </div>';
+                        ob_start();
 
-                    }
+                        echo view( 'wc_customization::admin.fields.' . $field[ 'type' ], compact( 'field', 'section_field_val', 'required_field', 'multiple_option', 'field_input_name' ) );
 
-                    if ( $field[ 'type' ] == 'textarea' ) {
-                        
-                        $section_form .= '<div class="mb-4 !mb-0">
-                                            <label class="flex gap-1 items-center mb-1.5 text-xs text-gray-800 dark:text-white font-medium ' . $required_field . '">' . $field[ 'title' ] . '</label>
-                                            <textarea 
-                                                type="' . $field[ 'type' ] . '" 
-                                                name="field_details[' . $field[ 'name' ] . ']" 
-                                                class="w-full py-2.5 px-3 border rounded-md text-sm text-gray-600 dark:text-gray-300 transition-all hover:border-gray-400 dark:hover:border-gray-400 focus:border-gray-400 dark:focus:border-gray-400 dark:bg-gray-900 dark:border-gray-800" 
-                                                id="' . $field[ 'name' ] . '" 
-                                                placeholder="' . $field[ 'title' ] . '"
-                                                ' . $required_field . '
-                                            >' . $section_field_val . '</textarea>
-                                        </div>';
+                        $section_form .= ob_get_clean();
 
                     }
 
                     if ( $field[ 'type' ] == 'file' ) {
 
-                        $multiple_flag = ( array_key_exists( 'multiple', $field ) && $field[ 'multiple' ] == true ) ? true : false;
+                        $pre_file_url = CustomizationHelpers::pre_file_url();
 
-                        $multiple_file_option = ( $multiple_flag == true ) ? 'multiple' : '';
+                        $field_input_name = ( $multiple_flag == true ) ? $field[ 'name' ] . '[]' : $field[ 'name' ];
 
-                        $file_input_name = ( $multiple_flag == true ) ? $field[ 'name' ] . '[]' : $field[ 'name' ];
+                        $section_field_val = ( is_array( $section_field_val ) ) ? $section_field_val : ( ( isset( $section_field_val ) && !is_null( $section_field_val ) ) ? array( $section_field_val ) : array() );
 
-                        $file_content = '';
+                        ob_start();
 
-                        if ( $multiple_flag == true ) {
+                        echo view( 'wc_customization::admin.fields.file', compact( 'field', 'section_field_val', 'required_field', 'multiple_option', 'field_input_name', 'pre_file_url' ) );
 
-                            if ( $section_field_val && is_array( $section_field_val ) && count( $section_field_val ) > 0 ) {
-
-                                $file_content .= '<div class="flex ">';
-
-                                foreach ( $section_field_val as $file ) {
-
-                                    $file_content .= '<a 
-                                                    href="' . CustomizationHelpers::pre_file_url() . $file . '" 
-                                                    target="_blank"
-                                                >
-                                                    <img 
-                                                        src="' . CustomizationHelpers::pre_file_url() . $file . '" 
-                                                        class="relative mr-5 h-[33px] w-[33px] top-15 rounded-3 border-3 border-gray-500"
-                                                    >
-                                                </a>';
-
-                                }
-
-                                $file_content .= '</div>';
-
-                            }
-
-                        } else {
-
-                            if ( isset( $section_field_val ) && !empty( $section_field_val ) && !is_null( $section_field_val ) ) {
-
-                                $file_content .= '<a 
-                                                    href="' . CustomizationHelpers::pre_file_url() . $section_field_val . '" 
-                                                    target="_blank"
-                                                >
-                                                    <img 
-                                                        src="' . CustomizationHelpers::pre_file_url() . $section_field_val . '" 
-                                                        class="relative mr-5 h-[33px] w-[33px] top-15 rounded-3 border-3 border-gray-500"
-                                                    >
-                                                </a>';
-                            
-                            }
-
-                        }
-                        
-                        $section_form .= '<div class="mb-4">
-                                            <div class="flex justify-between">
-                                                <label class="flex gap-1 items-center mb-1.5 text-xs text-gray-800 dark:text-white font-medium 
-                                                ' . ( ( isset( $section_field_val ) && !empty( $section_field_val ) && !is_null( $section_field_val ) ) 
-                                                    ? "" 
-                                                    : $required_field ) . '" 
-                                                    for="field_details[' . $field[ 'name' ] . ']"
-                                                    > ' . $field[ 'title' ] . '
-                                                    <span class=""></span>
-                                                </label>
-                                            </div>
-                                            <div class="flex justify-center items-center">
-                                                <input 
-                                                    type="' . $field[ 'type' ] . '" 
-                                                    name="' . $file_input_name . '" 
-                                                    class="w-full py-2.5 px-3 border rounded-md text-sm text-gray-600 dark:text-gray-300 transition-all hover:border-gray-400 dark:hover:border-gray-400 dark:file:bg-gray-800 dark:file:dark:text-white dark:hover:border-gray-400 focus:border-gray-400 dark:focus:border-gray-400 dark:bg-gray-900 dark:border-gray-800" 
-                                                    id="' . $field[ 'name' ] . '"
-                                                    ' . ( ( isset( $section_field_val ) && !empty( $section_field_val ) && !is_null( $section_field_val ) ) 
-                                                        ? "" 
-                                                        : $required_field ) . '
-                                                    ' . $multiple_file_option . '
-                                                >
-                                            </div>
-                                            ' . $file_content . '
-                                        </div>';
+                        $section_form .= ob_get_clean();
 
                     }
 
                     if ( $field[ 'type' ] == 'product' ) {
 
-                        $section_option = '';
+                        $products = '';
 
-                        $multiple_flag = ( array_key_exists( 'multiple', $field ) && $field[ 'multiple' ] == true ) ? true : false;
+                        $field_input_name = ( $multiple_flag == true ) ? 'field_details[' . $field[ 'name' ] . '][]' : 'field_details[' . $field[ 'name' ] . ']';
 
-                        $multiple_file_option = ( $multiple_flag == true ) ? 'multiple' : '';
+                        if ( class_exists( 'Webkul\Category\Models\Category' ) ) {
 
-                        $file_input_name = ( $multiple_flag == true ) ? 'field_details[' . $field[ 'name' ] . '][]' : $field[ 'name' ];
-
-                        $products = ProductFlat::whereNull( 'parent_id' )->where( 'status', 1 )->get();
-
-                        if ( $products && count( $products ) > 0 ) {
-                            
-                            foreach ( $products as $product ) {
-
-                                $selected_val = ( is_array( $section_field_val ) && in_array( $product->id, $section_field_val ) ) ? 'selected' : '';
-                                
-                                $section_option .= '<option value="'.$product->id.'" '.$selected_val.'>[ '.$product->sku.' ] '.$product->name.'</option>';
-
-                            }
+                            $products = ProductFlat::whereNull( 'parent_id' )->where( 'status', 1 )->get();
 
                         }
-                        
-                        $section_form .= '<div class="mb-4">
-                                            <label class="flex gap-1 items-center mb-1.5 text-xs text-gray-800 dark:text-white font-medium ' . $required_field . '">' . $field[ 'title' ] . '</label>
-                                            <select 
-                                                name="' . $file_input_name . '" 
-                                                class="custom-select w-full py-2.5 px-3 bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-md text-sm text-gray-600 dark:text-gray-300 font-normal transition-all hover:border-gray-400 dark:hover:border-gray-400" 
-                                                id="' . $field[ 'name' ] . '"
-                                                ' . $required_field . '
-                                                ' . $multiple_file_option . '
-                                            >
-                                                ' . $section_option . '
-                                            </select>
-                                        </div>';
+
+                        ob_start();
+
+                        echo view( 'wc_customization::admin.fields.product', compact( 'field', 'section_field_val', 'required_field', 'multiple_option', 'field_input_name', 'products' ) );
+
+                        $section_form .= ob_get_clean();
 
                     }
 
-                    if ( $field[ 'type' ] == 'category' ) {
+                    if ( in_array( $field[ 'type' ], array( 'category', 'category_product' ) ) ) {
 
-                        $section_option = '';
+                        $categorys = '';
 
-                        $multiple_flag = ( array_key_exists( 'multiple', $field ) && $field[ 'multiple' ] == true ) ? true : false;
+                        $field_input_name = ( $multiple_flag == true ) ? 'field_details[' . $field[ 'name' ] . '][]' : 'field_details[' . $field[ 'name' ] . ']';
 
-                        $multiple_file_option = ( $multiple_flag == true ) ? 'multiple' : '';
+                        if ( class_exists( 'Webkul\Category\Models\Category' ) ) {
 
-                        $file_input_name = ( $multiple_flag == true ) ? 'field_details[' . $field[ 'name' ] . '][]' : $field[ 'name' ];
-
-                        $categorys = Category::leftjoin('category_translations as cat_trl', 'cat_trl.category_id', '=', 'categories.id')
-                        ->select( 'categories.id', 'cat_trl.name' )
-                        ->where( 'categories.status', 1 )
-                        ->where( 'cat_trl.locale', 'en' )
-                        ->get();
-
-                        if ( $categorys && count( $categorys ) > 0 ) {
-                            
-                            foreach ( $categorys as $category ) {
-
-                                $selected_val = ( is_array( $section_field_val ) && in_array( $category->id, $section_field_val ) ) ? 'selected' : '';
-                                
-                                $section_option .= '<option value="'.$category->id.'" '.$selected_val.'>'.$category->name.'</option>';
-
-                            }
-
-                        }
-                        
-                        $section_form .= '<div class="mb-4">
-                                            <label class="flex gap-1 items-center mb-1.5 text-xs text-gray-800 dark:text-white font-medium ' . $required_field . '">' . $field[ 'title' ] . '</label>
-                                            <select 
-                                                name="' . $file_input_name . '" 
-                                                class="custom-select w-full py-2.5 px-3 bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-md text-sm text-gray-600 dark:text-gray-300 font-normal transition-all hover:border-gray-400 dark:hover:border-gray-400" 
-                                                id="' . $field[ 'name' ] . '"
-                                                ' . $required_field . '
-                                                ' . $multiple_file_option . '
-                                            >
-                                                ' . $section_option . '
-                                            </select>
-                                        </div>';
-
-                    }
-
-                    if ( $field[ 'type' ] == 'category_product' ) {
-
-                        $section_option = '';
-
-                        $multiple_flag = ( array_key_exists( 'multiple', $field ) && $field[ 'multiple' ] == true ) ? true : false;
-
-                        $multiple_file_option = ( $multiple_flag == true ) ? 'multiple' : '';
-
-                        $file_input_name = ( $multiple_flag == true ) ? 'field_details[' . $field[ 'name' ] . '][]' : $field[ 'name' ];
-
-                        $categorys = Category::leftjoin('category_translations as cat_trl', 'cat_trl.category_id', '=', 'categories.id')
-                        ->select( 'categories.id', 'cat_trl.name' )
-                        ->where( 'categories.status', 1 )
-                        ->where( 'cat_trl.locale', 'en' )
-                        ->get();
-
-                        if ( $categorys && count( $categorys ) > 0 ) {
-                            
-                            foreach ( $categorys as $category ) {
-
-                                $selected_val = ( is_array( $section_field_val ) && in_array( $category->id, $section_field_val ) ) ? 'selected' : '';
-                                
-                                $section_option .= '<option value="'.$category->id.'" '.$selected_val.'>'.$category->name.'</option>';
-
-                            }
-
-                        }
-                        
-                        $section_form .= '<div class="mb-4">
-                                            <label class="flex gap-1 items-center mb-1.5 text-xs text-gray-800 dark:text-white font-medium ' . $required_field . '">' . $field[ 'title' ] . '</label>
-                                            <select 
-                                                name="' . $file_input_name . '" 
-                                                class="custom-select w-full py-2.5 px-3 bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-md text-sm text-gray-600 dark:text-gray-300 font-normal transition-all hover:border-gray-400 dark:hover:border-gray-400" 
-                                                id="' . $field[ 'name' ] . '"
-                                                ' . $required_field . '
-                                                ' . $multiple_file_option . '
-                                            >
-                                                ' . $section_option . '
-                                            </select>
-                                        </div>';
-
-                    }
-
-                    if ( $field[ 'type' ] == 'blog' ) {
-
-                        $section_option = $blogs = '';
-
-                        $multiple_flag = ( array_key_exists( 'multiple', $field ) && $field[ 'multiple' ] == true ) ? true : false;
-
-                        $multiple_file_option = ( $multiple_flag == true ) ? 'multiple' : '';
-
-                        $file_input_name = ( $multiple_flag == true ) ? 'field_details[' . $field[ 'name' ] . '][]' : $field[ 'name' ];
-
-                        $if_blog_table = CustomizationHelpers::check_table_exist_in_database( 'Webbycrown\BlogBagisto\Models\Blog' );
-
-                        if ( $if_blog_table ) {
-
-                            $blogs = Blog::where('published_at', '<=', Carbon::now()->format('Y-m-d'))
-                            ->where( 'status', 1 )
-                            ->where( 'locale', 'en' )
+                            $categorys = Category::leftjoin('category_translations as cat_trl', 'cat_trl.category_id', '=', 'categories.id')
+                            ->select( 'categories.id', 'cat_trl.name' )
+                            ->where( 'categories.status', 1 )
+                            ->where( 'cat_trl.locale', 'en' )
                             ->get();
 
                         }
 
-                        if ( $blogs && count( $blogs ) > 0 ) {
-                            
-                            foreach ( $blogs as $blog ) {
+                        ob_start();
 
-                                $selected_val = ( is_array( $section_field_val ) && in_array( $blog->id, $section_field_val ) ) ? 'selected' : '';
-                                
-                                $section_option .= '<option value="'.$blog->id.'" '.$selected_val.'>'.$blog->name.'</option>';
+                        echo view( 'wc_customization::admin.fields.category', compact( 'field', 'section_field_val', 'required_field', 'multiple_option', 'field_input_name', 'categorys' ) );
+
+                        $section_form .= ob_get_clean();
+
+                    }
+
+                    if ( class_exists( 'Webbycrown\BlogBagisto\Providers\BlogServiceProvider' ) ) {
+
+                        if ( $field[ 'type' ] == 'blog' ) {
+
+                            $blogs = '';
+
+                            $field_input_name = ( $multiple_flag == true ) ? 'field_details[' . $field[ 'name' ] . '][]' : 'field_details[' . $field[ 'name' ] . ']';
+
+                            $if_blog_table = CustomizationHelpers::check_table_exist_in_database( 'Webbycrown\BlogBagisto\Models\Blog' );
+
+                            if ( $if_blog_table ) {
+
+                                $blogs = Blog::where('published_at', '<=', Carbon::now()->format('Y-m-d'))
+                                ->where( 'status', 1 )
+                                ->where( 'locale', 'en' )
+                                ->get();
 
                             }
 
+                            ob_start();
+
+                            echo view( 'wc_customization::admin.fields.blog', compact( 'field', 'section_field_val', 'required_field', 'multiple_option', 'field_input_name', 'blogs' ) );
+
+                            $section_form .= ob_get_clean();
+
                         }
-                        
-                        $section_form .= '<div class="mb-4">
-                                            <label class="flex gap-1 items-center mb-1.5 text-xs text-gray-800 dark:text-white font-medium ' . $required_field . '">' . $field[ 'title' ] . '</label>
-                                            <select 
-                                                name="' . $file_input_name . '" 
-                                                class="custom-select w-full py-2.5 px-3 bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-md text-sm text-gray-600 dark:text-gray-300 font-normal transition-all hover:border-gray-400 dark:hover:border-gray-400" 
-                                                id="' . $field[ 'name' ] . '"
-                                                ' . $required_field . '
-                                                ' . $multiple_file_option . '
-                                            >
-                                                ' . $section_option . '
-                                            </select>
-                                        </div>';
 
                     }
 
@@ -608,9 +402,9 @@ class CustomizationController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Handles the store of page data.
      *
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse A JSON response indicating the success or failure of the operation.
      */
     public function page_store(): JsonResponse
     {
@@ -682,9 +476,9 @@ class CustomizationController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Handles the store of section data.
      *
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse A JSON response indicating the success or failure of the operation.
      */
     public function section_store(): JsonResponse
     {
@@ -762,9 +556,9 @@ class CustomizationController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Handles the validation of section setting.
      *
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse A JSON response indicating the success or failure of the operation.
      */
     public function section_setting_validate(): JsonResponse
     {
@@ -811,9 +605,9 @@ class CustomizationController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Handles the store of section setting data.
      *
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse A JSON response indicating the success or failure of the operation.
      */
     public function section_setting_store(): JsonResponse
     {
@@ -904,9 +698,9 @@ class CustomizationController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Handles the stor of section detail data for page.
      *
-     * @return \Illuminate\Http\Response
+     * @return JsonResponse A JSON response indicating the success or failure of the operation.
      */
     public function store(): JsonResponse
     {
@@ -1096,6 +890,172 @@ class CustomizationController extends Controller
         return new JsonResponse([
             'message' => 'Save Customization Details Successfully',
         ]);
+    }
+
+    /**
+     * Remove the specified resource from page.
+     */
+    public function page_delete(int $id): JsonResponse
+    {
+        try {
+
+            $page = CustomizationPages::find( $id );
+
+            if ( $page ) {
+
+                $settings = CustomizationSettings::where( 'page_slug', $page->slug )
+                                                ->where( 'parent_id', 0 )
+                                                ->whereNull( 'setting_type' )
+                                                ->get();
+                
+                if ( $settings && count( $settings ) > 0 ) {
+                
+                    foreach ( $settings as $setting ) {
+                
+                        $this->section_setting_delete( $setting->id );
+                
+                    }
+                
+                }
+                
+                CustomizationSections::where( 'page_slug', $page->slug )->delete();
+                
+                CustomizationDetails::where( 'page_slug', $page->slug )->delete();
+                
+                $page->delete();
+
+                return new JsonResponse([
+                    'message' => 'The page has been successfully deleted and also deleted this all sections, setting and value.',
+                ]);
+
+            }
+
+            return new JsonResponse([
+                'message' => 'Something went wrong while deleting page',
+            ], 500);
+
+        } catch (\Exception $e) {
+
+            return new JsonResponse([
+                'message' => 'Error encountered while deleting page',
+            ], 500);
+
+        }
+
+    }
+
+    /**
+     * Remove the specified resource from section.
+     */
+    public function section_delete(int $id): JsonResponse
+    {
+        try {
+
+            $section = CustomizationSections::find( $id );
+
+            if ( $section ) {
+                
+                $settings = CustomizationSettings::where( 'page_slug', $section->page_slug )
+                                                ->where( 'section_slug', $section->slug )
+                                                ->where( 'parent_id', 0 )
+                                                ->whereNull( 'setting_type' )
+                                                ->get();
+                
+                if ( $settings && count( $settings ) > 0 ) {
+                
+                    foreach ( $settings as $setting ) {
+                
+                        $this->section_setting_delete( $setting->id );
+                
+                    }
+                
+                }
+                
+                CustomizationDetails::where( 'page_slug', $section->page_slug )->where( 'section_slug', $section->slug )->delete();
+                
+                $section->delete();
+
+                return new JsonResponse([
+                    'message' => 'The section has been successfully deleted and also deleted this all settings and values.',
+                ]);
+
+            }
+
+            return new JsonResponse([
+                'message' => 'Something went wrong while deleting section',
+            ], 500);
+
+        } catch (\Exception $e) {
+
+            return new JsonResponse([
+                'message' => 'Error encountered while deleting section',
+            ], 500);
+
+        }
+
+    }
+
+    /**
+     * Remove the specified resource from section setting.
+     */
+    public function section_setting_delete(int $id): JsonResponse
+    {
+        try {
+
+            $setting = CustomizationSettings::find( $id );
+
+            if ( $setting ) {
+
+                $old_setting = $setting;
+
+                $id = $old_setting->id;
+                
+                $parent_id = $old_setting->parent_id;
+                
+                $page_slug = $old_setting->page_slug;
+                
+                $section_slug = $old_setting->section_slug;
+                
+                $field_key = $old_setting->name;
+                
+                $field_type = $old_setting->type;
+                
+                $field_setting_type = $old_setting->setting_type;
+
+                $setting->delete();
+
+                $setting_id = ( $field_setting_type == 'repeater' ) ? $parent_id : $id;
+                
+                CustomizationHelpers::delete_field_value_in_customization_detail( $page_slug, $section_slug, $field_key, $field_type, $field_setting_type, $setting_id );
+
+                if ( $field_type == 'repeater' && (int)$setting_id > 0 ) {
+                
+                    $repeater_fields = CustomizationSettings::where( 'page_slug', $page_slug )
+                                                            ->where( 'section_slug', $section_slug )
+                                                            ->where( 'parent_id', $setting_id )
+                                                            ->where( 'setting_type', 'repeater' )
+                                                            ->delete();
+                
+                }
+
+                return new JsonResponse([
+                    'message' => 'The section setting has been successfully deleted and also deleted this value.',
+                ]);
+
+            }
+
+            return new JsonResponse([
+                'message' => 'Something went wrong while deleting section setting',
+            ], 500);
+
+        } catch (\Exception $e) {
+
+            return new JsonResponse([
+                'message' => 'Error encountered while deleting section setting',
+            ], 500);
+
+        }
+
     }
 
 }

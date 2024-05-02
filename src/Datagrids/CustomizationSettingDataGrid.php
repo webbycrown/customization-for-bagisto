@@ -1,10 +1,19 @@
 <?php
 
+/**
+ * Namespace for customizations related to datagrids within the Webbycrown application.
+ * This namespace organizes code related to manipulating and displaying data in tabular format.
+ */
 namespace Webbycrown\Customization\Datagrids;
 
 use Illuminate\Support\Facades\DB;
 use Webkul\DataGrid\DataGrid;
+use Webbycrown\Customization\Helpers\CustomizationHelpers;
 
+/**
+ * CustomizationSettingDataGrid extends the functionality of DataGrid to provide specialized features
+ * tailored for customization settings display and management.
+ */
 class CustomizationSettingDataGrid extends DataGrid
 {
     /**
@@ -45,6 +54,15 @@ class CustomizationSettingDataGrid extends DataGrid
         'locales',
     ];
 
+    /**
+     * Prepares a query builder for database operations.
+     * 
+     * This method initializes or configures a query builder object
+     * for performing database operations. It may set up initial conditions,
+     * select columns, apply filters, or perform other necessary setup steps.
+     * 
+     * @return QueryBuilder The prepared query builder object.
+     */
     public function prepareQueryBuilder()
     {
         $page_slug = request()->route('slug1');
@@ -75,6 +93,9 @@ class CustomizationSettingDataGrid extends DataGrid
     	return $queryBuilder;
     }
 
+    /**
+     * Prepares columns for data processing.
+     */
     public function prepareColumns()
     {
         $this->addColumn([
@@ -93,6 +114,9 @@ class CustomizationSettingDataGrid extends DataGrid
             'searchable' => true,
             'sortable' => true,
             'filterable' => false,
+            'closure'    => function ($row) {
+                return CustomizationHelpers::get_string_with_breack_with_space( $row->title, 20 );
+            }
         ]);
 
         $this->addColumn([
@@ -102,6 +126,9 @@ class CustomizationSettingDataGrid extends DataGrid
             'searchable' => true,
             'sortable' => true,
             'filterable' => false,
+            'closure'    => function ($row) {
+                return CustomizationHelpers::get_string_with_breack_without_space( $row->name, 20 );
+            }
         ]);
 
         $this->addColumn([
@@ -151,6 +178,10 @@ class CustomizationSettingDataGrid extends DataGrid
 
     }
 
+    /**
+     * This function prepares actions.
+     * It currently lacks implementation details and requires further development.
+     */
     public function prepareActions()
     {
     	$this->addAction([
@@ -173,17 +204,25 @@ class CustomizationSettingDataGrid extends DataGrid
             },
         ]);
 
+        $this->addAction([
+            'index' => 'setting_delete',
+            'icon'   => 'icon-delete',
+            'title'  => 'Delete',
+            'method' => 'DELETE',
+            'url'    => function ($row) {
+                return route('wc_customization.section.setting.delete', $row->id);
+            },
+        ]);
+
     }
 
+    /**
+     * Placeholder function for preparing mass actions.
+     * This function is intended to handle preparations required for mass actions, 
+     * but currently lacks implementation. Further development is needed.
+     */
     public function prepareMassActions()
     {
-    	// $this->addMassAction([
-    	// 	'type'   => 'delete',
-    	// 	'label'  => trans('admin::app.datagrid.delete'),
-    	// 	'title'  => 'Delete',
-    	// 	'action' => route('admin.blog.massdelete'),
-    	// 	'url' => route('admin.blog.massdelete'),
-    	// 	'method' => 'POST',
-    	// ]);
+    	//
     }
 }

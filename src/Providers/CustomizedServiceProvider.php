@@ -5,9 +5,11 @@ namespace Webbycrown\Customization\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Blade;
 
 class CustomizedServiceProvider extends ServiceProvider
 {
+
     /**
      * Bootstrap services.
      *
@@ -20,6 +22,8 @@ class CustomizedServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__ . '/../Routes/shop-routes.php');
 
         $this->loadViewsFrom(__DIR__ . '/../Resources/views', 'wc_customization');
+
+        Blade::anonymousComponentPath(__DIR__.'/../Resources/views', 'wc_customization');
     }
     
     /**

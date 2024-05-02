@@ -86,6 +86,15 @@
                                 >
                                 </span>
                             </a>
+
+                            <a @click="deleteSetting(record.actions.find(action => action.index === 'setting_delete')?.url)">
+                                <span
+                                    :class="record.actions.find(action => action.index === 'setting_delete')?.icon"
+                                    class="cursor-pointer rounded-md p-1.5 text-2xl transition-all hover:bg-gray-200 dark:hover:bg-gray-800 max-sm:place-self-center"
+                                >
+                                </span>
+                            </a>
+
                         </div>
                     </div>
                 </template>
@@ -484,6 +493,23 @@
                         this.section_slug = '{{$section_slug}}';
                         this.setting_parent_id = '{{$id}}';
                         this.setting_type = 'repeater';
+                    },
+
+                    deleteSetting(url) {
+                        this.$emitter.emit('open-confirm-modal', {
+                            message: 'Are you sure you want to delete repeater setting and also delete this value?',
+                            agree: () => {
+                                this.$axios.delete(url)
+                                .then(response => {
+                                    this.$emitter.emit('add-flash', { type: 'success', message: response.data.message });
+
+                                    this.$refs.datagrid.get();
+                                })
+                                .catch((error) => {
+                                    this.$emitter.emit('add-flash', { type: 'error', message: error.response.data.message });
+                                });
+                            }
+                        });
                     }
                 },
             });
