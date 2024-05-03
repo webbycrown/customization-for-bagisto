@@ -1,6 +1,18 @@
-# customization-for-bagisto
+# Customization for Bagisto
 
 ## 1. Introduction:
+
+“Customization for Bagisto” is an extension that enables you to build dynamic page section options managed from the backend. This plugin allows you to manage the frontend appearance from the backend and also has an API, which allows you to deploy the website from the front end. This means that users can manage page sections from the backend, specify the types of sections needed for each page, and seamlessly deploy these changes to the frontend using the API.
+
+### Key Features:
+
+- Backend settings allow you to create page's sections and you can create section options.
+- You can build sections of pages in the backend that you construct on page settings, which allows you to classify which pages and what types of sections you require on that page. With API, it will be dynamically presented on the website's front end.
+- Each section includes a range of field types, including Text Box, Select Field, Text Area, File, Product, Category, Category Product, and Repeater.
+- To add a blog, you may need to install a blog extension so that blogging functionalities are available on your site.
+- There is another feature called "Repeater" that allows you to repeat content options in the backend.
+- There is a facility that also allows you to add multiple fields to showcase your content.
+
 
 ## 2. Requirements:
 
@@ -39,7 +51,7 @@ php artisan vendor:publish --all
 
 - Get Customization Details
 
-**Method** : POST.
+**Method** : POST.<br />
 **URL** : http://localhost/api/v1/customization_details
 
 | Param Name    | Type      | Description														|
