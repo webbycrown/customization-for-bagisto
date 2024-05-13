@@ -1,4 +1,4 @@
-# Customization for Bagisto
+# customization-for-bagisto
 
 ## 1. Introduction:
 
@@ -12,7 +12,6 @@
 - To add a blog, you may need to install a blog extension so that blogging functionalities are available on your site.
 - There is another feature called "Repeater" that allows you to repeat content options in the backend.
 - There is a facility that also allows you to add multiple fields to showcase your content.
-
 
 ## 2. Requirements:
 
@@ -51,7 +50,7 @@ php artisan vendor:publish --all
 
 - Get Customization Details
 
-**Method** : POST.<br />
+**Method** : POST.
 **URL** : http://localhost/api/v1/customization_details
 
 | Param Name    | Type      | Description														|

@@ -770,7 +770,7 @@
                                     <div v-if="repeater_field.multiple == true">
 
                                         <select
-                                            :name="['repeater_data[' + repeater_name + '][' + index + '][' + repeater_field.name + ']']"
+                                            :name="['repeater_data[' + repeater_name + '][' + index + '][' + repeater_field.name + '][]']"
                                             class="custom-select flex w-full min:w-1/2 h-10 py-1.5 px-3 bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-md text-sm text-gray-600 dark:text-gray-300 font-normal transition-all hover:border-gray-400 ltr:pr-10 rtl:pl-10"
                                             v-model="single_repeater[repeater_field.name]"
                                             required="required"
@@ -819,7 +819,7 @@
                                     <div v-if="repeater_field.multiple == true">
 
                                         <select
-                                            :name="['repeater_data[' + repeater_name + '][' + index + '][' + repeater_field.name + ']']"
+                                            :name="['repeater_data[' + repeater_name + '][' + index + '][' + repeater_field.name + '][]']"
                                             class="custom-select flex w-full min:w-1/2 h-10 py-1.5 px-3 bg-white dark:bg-gray-900 border dark:border-gray-800 rounded-md text-sm text-gray-600 dark:text-gray-300 font-normal transition-all hover:border-gray-400 ltr:pr-10 rtl:pl-10"
                                             v-model="single_repeater[repeater_field.name]"
                                             multiple="multiple"

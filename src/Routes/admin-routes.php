@@ -8,9 +8,9 @@ Route::group(['middleware' => ['web', 'admin'], 'prefix' => config('app.admin_ur
     /**
      * Admin customization routes
      */
-    Route::prefix('customization')->group(function () {
+    Route::controller(CustomizationController::class)->group(function () {
 
-        Route::controller(CustomizationController::class)->group(function () {
+        Route::prefix('customization')->group(function () {
 
             Route::get('/{slug1}/{slug2}', 'sections_index')
                     ->defaults('_config', ['view' => 'wc_customization::admin.sections.index'])

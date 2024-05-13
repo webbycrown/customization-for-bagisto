@@ -31,6 +31,7 @@ use Webkul\Category\Models\Category;
 use Webbycrown\BlogBagisto\Models\Blog;
 use Carbon\Carbon;
 use Webbycrown\Customization\Helpers\CustomizationHelpers;
+use Webkul\Core\Models\CoreConfig;
 
 /**
  * Controller class responsible for handling customization logic for admin.
@@ -726,11 +727,11 @@ class CustomizationController extends Controller
 
         }
 
-        $file_field_keys = CustomizationHelpers::get_file_field_keys();
+        $file_field_keys = CustomizationHelpers::get_file_field_keys( null, $page_slug, $section_slug );
 
-        $file_field_keys_with_rp = CustomizationHelpers::get_file_field_keys( 'repeater' );
+        $file_field_keys_with_rp = CustomizationHelpers::get_file_field_keys( 'repeater', $page_slug, $section_slug );
 
-        $repeater_field_keys = CustomizationHelpers::get_repeater_field_keys();
+        $repeater_field_keys = CustomizationHelpers::get_repeater_field_keys( $page_slug, $section_slug );
 
         $file_flags_arr = array();
         

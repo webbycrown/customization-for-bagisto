@@ -242,6 +242,7 @@ class CustomizationHelpers
      */
     public static function get_file_field_keys( $repeater = null, $page_slug = null, $section_slug = null )
     {
+        // return CustomizationHelpers::new_get_field_keys_arr_by_type( 'file', $repeater, $page_slug, $section_slug );
         return CustomizationHelpers::get_field_keys_arr_by_type( 'file', $repeater, $page_slug, $section_slug );
     }
 
@@ -320,123 +321,29 @@ class CustomizationHelpers
     {
         $field_keys_arr = [];
 
-        if ( $field_type && isset( $field_type ) && !empty( $field_type ) && !is_null( $field_type ) ) {
+        if ( $field_type && isset( $field_type ) && !empty( $field_type ) && !is_null( $field_type ) && $page_slug && isset( $page_slug ) && !empty( $page_slug ) && !is_null( $page_slug ) && $section_slug && isset( $section_slug ) && !empty( $section_slug ) && !is_null( $section_slug ) ) {
 
-            $customizations_data = CustomizationHelpers::get_customizations_data();
+            $fields = CustomizationSettings::where( 'page_slug', $page_slug )->where( 'section_slug', $section_slug )->where( 'type', $field_type )->where( 'status', 1 )->where( 'parent_id', 0 )->whereNull( 'setting_type' )->get();
 
-            if ( $customizations_data && is_array( $customizations_data ) && count( $customizations_data ) > 0 ) {
+            if ( $fields && count( $fields ) > 0 ) {
 
-                if ( array_key_exists( 'pages', $customizations_data ) && $customizations_data[ 'pages' ] && is_array( $customizations_data[ 'pages' ] ) && count( $customizations_data[ 'pages' ] ) > 0 ) {
+                $field_keys_arr = $fields->pluck( 'name' )->unique()->toarray();
 
-                    foreach ( $customizations_data[ 'pages' ] as $key => $customization ) {
+            }
 
-                        if ( array_key_exists( 'sections', $customization ) && $customization[ 'sections' ] && is_array( $customization[ 'sections' ] ) && count( $customization[ 'sections' ] ) > 0 ) {
+            if ( $repeater == 'repeater' ) {
 
-                            foreach ( $customization[ 'sections' ] as $s_key => $section ) {
+                $rp_field_keys_arr = [];
 
-                                if ( array_key_exists( 'fields', $section ) && $section[ 'fields' ] && is_array( $section[ 'fields' ] ) && count( $section[ 'fields' ] ) > 0 ) {
+                $rp_fields = CustomizationSettings::where( 'page_slug', $page_slug )->where( 'section_slug', $section_slug )->where( 'type', $field_type )->where( 'status', 1 )->where( 'setting_type', $repeater )->get();
 
-                                    foreach ( $section[ 'fields' ] as $f_key => $field ) {
+                if ( $rp_fields && count( $rp_fields ) > 0 ) {
 
-                                        if ( $field && is_array( $field ) && array_key_exists( 'type', $field ) && $field[ 'type' ] == $field_type && array_key_exists( 'name', $field ) ) {
-
-                                            if ( $page_slug && isset( $page_slug ) && !empty( $page_slug ) && !is_null( $page_slug ) && $section_slug && isset( $section_slug ) && !empty( $section_slug ) && !is_null( $section_slug ) ) {
-
-                                                $if_cust_setting = CustomizationSettings::where( 'page_slug', $page_slug )
-                                                                                        ->where( 'section_slug', $section_slug )
-                                                                                        ->where( 'name', $field[ 'name' ] )
-                                                                                        ->where( 'type', $field_type )
-                                                                                        ->where( 'status', 1 )
-                                                                                        ->where( 'parent_id', 0 )
-                                                                                        ->whereNull( 'setting_type' )
-                                                                                        ->first();
-
-                                                if ( $if_cust_setting ) {
-
-                                                    $field_keys_arr[] = $field[ 'name' ];
-
-                                                }
-
-                                            } else {
-
-                                                $field_keys_arr[] = $field[ 'name' ];
-
-                                            }
-
-                                        }
-
-                                        if ( $repeater == 'repeater' ) {
-                                            
-                                            if ( array_key_exists( 'repeater_fields', $field ) ) {
-
-                                                $rp_id_flag = false;
-
-                                                $repeater_id = 0;
-
-                                                $repeater_name = array_key_exists( 'name', $field ) ? $field[ 'name' ] : null;
-
-                                                $if_rp_cust_setting_flag = CustomizationSettings::where( 'page_slug', $page_slug )
-                                                                                            ->where( 'section_slug', $section_slug )
-                                                                                            ->where( 'name', $repeater_name )
-                                                                                            ->where( 'type', 'repeater' )
-                                                                                            ->where( 'status', 1 )
-                                                                                            ->where( 'parent_id', 0 )
-                                                                                            ->whereNull( 'setting_type' )
-                                                                                            ->first();
-
-                                                if ( $if_rp_cust_setting_flag ) {
-
-                                                    $repeater_id = (int)$if_rp_cust_setting_flag->id;
-
-                                                    $rp_id_flag = true;
-
-                                                }
-
-                                            	foreach ( $field[ 'repeater_fields' ] as $rf_key => $r_field ) {
-
-                                            		if ( $r_field && is_array( $r_field ) && array_key_exists( 'type', $r_field ) && $r_field[ 'type' ] == $field_type && array_key_exists( 'name', $r_field ) ) {
-
-                                                        if ( $page_slug && isset( $page_slug ) && !empty( $page_slug ) && !is_null( $page_slug ) && $section_slug && isset( $section_slug ) && !empty( $section_slug ) && !is_null( $section_slug ) && $rp_id_flag == true ) {
-
-                                                            $if_rp_cust_setting = CustomizationSettings::where( 'page_slug', $page_slug )
-                                                                                                    ->where( 'section_slug', $section_slug )
-                                                                                                    ->where( 'name', $r_field[ 'name' ] )
-                                                                                                    ->where( 'status', 1 )
-                                                                                                    ->where( 'parent_id', $repeater_id )
-                                                                                                    ->where( 'setting_type', 'repeater' )
-                                                                                                    ->first();
-
-                                                            if ( $if_rp_cust_setting ) {
-
-                                                                $field_keys_arr[] = $r_field[ 'name' ];
-
-                                                            }
-
-                                                        } else {
-
-                                                            $field_keys_arr[] = $r_field[ 'name' ];
-
-                                                        }
-
-                                            		}
-
-                                            	}
-
-                                            }
-
-                                        }
-
-                                    }
-
-                                }
-
-                            }
-
-                        }
-
-                    }
+                    $rp_field_keys_arr = $rp_fields->pluck( 'name' )->unique()->toarray();
 
                 }
+
+                $field_keys_arr = array_merge( $field_keys_arr, $rp_field_keys_arr );
 
             }
 
@@ -987,9 +894,9 @@ class CustomizationHelpers
      * @param string $db_field_val The value corresponding to the key.
      * @return string|null The AWS URL if found, null otherwise.
      */
-    public static function get_aws_url_by_key( $db_field_key, $db_field_val )
+    public static function get_aws_url_by_key( $db_field_key, $db_field_val, $db_page_slug, $db_section_slug )
     {
-        $file_field_keys = CustomizationHelpers::get_file_field_keys( 'repeater' );
+        $file_field_keys = CustomizationHelpers::get_file_field_keys( 'repeater', $db_page_slug, $db_section_slug );
 
         if ( is_array( $file_field_keys ) && count( $file_field_keys ) > 0 && in_array( $db_field_key, $file_field_keys ) ) {
 
@@ -1032,11 +939,11 @@ class CustomizationHelpers
      * @param mixed $db_field_val The value to match for the given field.
      * @return array|null Array of products matching the criteria, or null if no products found.
      */
-    public static function get_products_by_key( $db_field_key, $db_field_val )
+    public static function get_products_by_key( $db_field_key, $db_field_val, $db_page_slug, $db_section_slug )
     {
         $product_data = '';
 
-        $product_field_keys = CustomizationHelpers::get_product_field_keys();
+        $product_field_keys = CustomizationHelpers::get_product_field_keys( $db_page_slug, $db_section_slug );
 
         if ( is_array( $product_field_keys ) && count( $product_field_keys ) > 0 && in_array( $db_field_key, $product_field_keys ) && is_array( $db_field_val ) ) {
 
@@ -1071,11 +978,11 @@ class CustomizationHelpers
      * @param mixed $db_field_val The value corresponding to the key.
      * @return array|null An array of categories matching the key-value pair, or null if none found.
      */
-    public static function get_categorys_by_key( $db_field_key, $db_field_val )
+    public static function get_categorys_by_key( $db_field_key, $db_field_val, $db_page_slug, $db_section_slug )
     {
         $category_data = '';
 
-        $category_field_keys = CustomizationHelpers::get_category_field_keys();
+        $category_field_keys = CustomizationHelpers::get_category_field_keys( $db_page_slug, $db_section_slug );
 
         if ( is_array( $category_field_keys ) && count( $category_field_keys ) > 0 && in_array( $db_field_key, $category_field_keys ) && is_array( $db_field_val ) ) {
 
@@ -1105,11 +1012,11 @@ class CustomizationHelpers
      * @param mixed $db_field_val The value to match against the given field key.
      * @return array|null An array of products in the category, or null if no matching category is found.
      */
-    public static function get_category_product_by_key( $db_field_key, $db_field_val )
+    public static function get_category_product_by_key( $db_field_key, $db_field_val, $db_page_slug, $db_section_slug )
     {
         $category_product_data = '';
 
-        $category_product_field_keys = CustomizationHelpers::get_category_product_field_keys();
+        $category_product_field_keys = CustomizationHelpers::get_category_product_field_keys( $db_page_slug, $db_section_slug );
 
         if ( is_array( $category_product_field_keys ) && count( $category_product_field_keys ) > 0 && in_array( $db_field_key, $category_product_field_keys ) && is_array( $db_field_val ) ) {
 
@@ -1149,11 +1056,11 @@ class CustomizationHelpers
      * @param mixed $db_field_val The value associated with the field key.
      * @return array|false Returns an array containing the blog entry if found, or false if not found.
      */
-    public static function get_blog_by_key( $db_field_key, $db_field_val )
+    public static function get_blog_by_key( $db_field_key, $db_field_val, $db_page_slug, $db_section_slug )
     {
         $blog_data = '';
 
-        $blog_field_keys = CustomizationHelpers::get_blog_field_keys();
+        $blog_field_keys = CustomizationHelpers::get_blog_field_keys( $db_page_slug, $db_section_slug );
 
         if ( is_array( $blog_field_keys ) && count( $blog_field_keys ) > 0 && in_array( $db_field_key, $blog_field_keys ) && is_array( $db_field_val ) ) {
 
@@ -1189,27 +1096,17 @@ class CustomizationHelpers
      * @param string $page_slug The slug of the page.
      * @return array An array containing the slugs of sections.
      */
-    public static function get_section_slugs( $page_slug )
+    public static function get_section_slugs( $page_slug = null )
     {
         $section_slug_arr = array();
 
         if ( isset( $page_slug ) && !is_null( $page_slug ) ) {
 
-            $customizations = CustomizationHelpers::get_customization_data_by_slug( $page_slug );
-
-            $sections = ( !empty( $customizations ) && count( $customizations ) > 0 && array_key_exists( 'sections', $customizations) ) ? $customizations[ 'sections' ] : [];
+            $sections = CustomizationSections::where( 'page_slug', $page_slug )->get();
 
             if ( $sections && count( $sections ) > 0 ) {
 
-                foreach ( $sections as $section ) {
-
-                    if ( is_array( $section ) && array_key_exists( 'slug', $section ) ) {
-
-                        $section_slug_arr[] = $section[ 'slug' ];
-
-                    }
-
-                }
+                $section_slug_arr = $sections->pluck( 'slug' )->unique()->toarray();
 
             }
 

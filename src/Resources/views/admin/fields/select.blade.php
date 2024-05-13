@@ -11,7 +11,11 @@
         {{ $required_field }}
         {{ $multiple_option }}
     >
-        <option value=""> Select {{ $field[ 'title' ] }} </option>
+        @if( $multiple_option != 'multiple' )
+
+            <option value=""> Select {{ $field[ 'title' ] }} </option>
+            
+        @endif
         
         @if( array_key_exists( 'options', $field ) &&  $field[ 'options' ] && count( $field[ 'options' ] ) > 0 )
 
