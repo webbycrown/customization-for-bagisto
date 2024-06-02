@@ -50,7 +50,7 @@ php artisan vendor:publish --all
 
 - Get Customization Details
 
-**Method** : POST.
+**Method** : POST.<br />
 **URL** : http://localhost/api/v1/customization_details
 
 | Param Name    | Type      | Description														|
