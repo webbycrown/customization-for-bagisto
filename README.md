@@ -68,3 +68,9 @@ php artisan vendor:publish --all
 1. **page_slug** is required.
 2. **page_slug** is required when you enter **section_slug**.
 3. **page_slug** and **section_slug** is required when you enter **field_key**.
+
+---
+
+<div align="center">
+  <strong>Made with ❤️ by <a href="https://webbycrown.com">WebbyCrown</a></strong>
+</div>
