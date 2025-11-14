@@ -189,10 +189,10 @@ class CustomizationSettingDataGrid extends DataGrid
             'icon' => 'icon-edit',
             'title' => 'Edit',
             'method' => 'GET',
-    		'url'    => function ($row) {
-    			return route( 'wc_customization.section.setting.edit', $row->id );
-    		},
-    	]);
+            'url'    => function ($row) {
+                return route( 'wc_customization.section.setting.edit', $row->id );
+            },
+        ]);
 
         $this->addAction([
             'index' => 'repeater_section_settings',

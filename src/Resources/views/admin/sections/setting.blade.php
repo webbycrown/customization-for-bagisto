@@ -56,9 +56,16 @@
 
             <x-admin::datagrid :src="route('wc_customization.admin.customization.sections.setting', [ $page_slug, $section_slug ])" ref="datagrid">
                 <!-- DataGrid Body -->
-                <template #body="{ columns, records, performAction }">
+                <template #body="{
+                    isLoading,
+                    available,
+                    applied,
+                    selectAll,
+                    sort,
+                    performAction
+                }">
                     <div
-                        v-for="record in records"
+                        v-for="record in available.records"
                         class="row grid gap-2.5 items-center px-4 py-4 border-b dark:border-gray-800 text-gray-600 dark:text-gray-300 transition-all hover:bg-gray-50 dark:hover:bg-gray-950"
                         :style="`grid-template-columns: repeat(${gridsCount}, minmax(0, 1fr))`"
                     >
