@@ -2,7 +2,7 @@
     "name": "webbycrown/customization-for-bagisto",
     "description": "Dynamic page customization system for Bagisto - Create and manage page sections, fields, and content from the backend with API support",
     "type": "library",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "license": "MIT",
     "keywords": [
         "bagisto",
@@ -21,8 +21,10 @@
     ],
     "require": {
         "php": "^8.1|^8.2",
-        "intervention/image": "^2.7|^3.0",
-        "intervention/imagecache": "^2.6"
+        "intervention/image": "^2.7|^3.0"
+    },
+    "suggest": {
+        "intervention/imagecache": "For image caching support (optional)"
     },
     "autoload": {
         "psr-4": {

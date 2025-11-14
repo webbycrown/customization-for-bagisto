@@ -699,16 +699,17 @@ class CustomizationController extends Controller
     }
 
     /**
-     * Handles the stor of section detail data for page.
+     * Handles the store of section detail data for page.
      *
      * @return JsonResponse A JSON response indicating the success or failure of the operation.
      */
     public function store(): JsonResponse
     {
         $this->validate(request(), [
-            'page_slug'     => 'required',
-            'section_slug'  => 'required',
-            'field_details' => 'array',
+            'page_slug'     => 'required|string',
+            'section_slug'  => 'required|string',
+            'field_details' => 'nullable|array',
+            'repeater_data' => 'nullable|array',
         ]);
 
         $data = request()->all();
@@ -717,9 +718,9 @@ class CustomizationController extends Controller
 
         $section_slug = array_key_exists( 'section_slug', $data ) ? $data[ 'section_slug' ] : null;
 
-        $field_details = array_key_exists( 'field_details', $data ) ? $data[ 'field_details' ] : array();
+        $field_details = array_key_exists( 'field_details', $data ) && is_array( $data[ 'field_details' ] ) ? $data[ 'field_details' ] : array();
 
-        $repeater_data = array_key_exists( 'repeater_data', $data ) ? $data[ 'repeater_data' ] : array();
+        $repeater_data = array_key_exists( 'repeater_data', $data ) && is_array( $data[ 'repeater_data' ] ) ? $data[ 'repeater_data' ] : array();
 
         if ( $repeater_data && is_array( $repeater_data ) && count( $repeater_data ) > 0 ) {
 

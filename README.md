@@ -22,10 +22,11 @@
 ## 2. Requirements:
 
 * **PHP**: 8.1 or 8.2
-* **Bagisto**: v2.0.*
+* **Bagisto**: v2.0.* or higher
 * **Composer**: 1.6.5 or higher
-* **Laravel**: 10.x or higher
+* **Laravel**: 10.x or 11.x
 * **Intervention Image**: ^2.7 (PHP 8.1) or ^3.0 (PHP 8.2)
+* **Intervention ImageCache**: Optional (not required)
 
 ## 3. Installation:
 
@@ -642,6 +643,24 @@ A: Yes, it's theme-agnostic. Integrate via API in any theme.
 - 🌐 Website: [webbycrown.com](https://webbycrown.com)
 
 ## 14. Changelog:
+
+### v1.0.1 - 2025-11-14
+
+#### 🐛 Bug Fixes
+
+- 🔧 **Fixed critical validation error** in `CustomizationController@store` method
+- ✅ Changed `field_details` validation from `array` to `nullable|array`
+- ✅ Added `repeater_data` validation rule to support repeater fields
+- 🔄 Fixed repeater fields not appearing/saving properly
+- 🚀 Sections with only repeater fields now work correctly
+
+#### 🔧 Dependency Fix
+
+- 🔧 **Fixed Laravel 11 compatibility** - Removed `intervention/imagecache` from required dependencies
+- ✅ Made `intervention/imagecache` optional (moved to suggest section)
+- 💪 Works with both Laravel 10 and 11
+
+---
 
 ### v1.0.0 - 2025-11-14
 
